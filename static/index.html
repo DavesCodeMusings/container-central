@@ -12,13 +12,13 @@
 </head>
 
 <!-- The /images API call allows image data to be cached and used when matching containers to image names. -->
-<body onload="callAPI('/images', cacheImages);">
+<body onload="apiGet('/images', cacheImages);">
   <nav>
     <ul>
-      <li style="list-style-image: url(icons/cube-outline.svg);" onclick="callAPI('/containers', viewContainers);">Containers</li>
-      <li style="list-style-image: url(icons/file-outline.svg);" onclick="callAPI('/images', viewImages);">Images</li>
-      <li style="list-style-image: url(icons/view-dashboard-outline.svg);" onclick="callAPI('/stacks', viewStacks);">Stacks</li>
-      <li style="list-style-image: url(icons/database-outline.svg);" onclick="callAPI('/volumes', viewVolumes);">Volumes</li>
+      <li style="list-style-image: url(icons/cube-outline.svg);" onclick="apiGet('/containers', viewContainers);">Containers</li>
+      <li style="list-style-image: url(icons/file-outline.svg);" onclick="apiGet('/images', viewImages);">Images</li>
+      <li style="list-style-image: url(icons/view-dashboard-outline.svg);" onclick="apiGet('/stacks', viewStacks);">Stacks</li>
+      <li style="list-style-image: url(icons/database-outline.svg);" onclick="apiGet('/volumes', viewVolumes);">Volumes</li>
     </ul>
   </nav>
 

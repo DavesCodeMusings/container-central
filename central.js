@@ -88,7 +88,7 @@ app.get('/stacks', (req, res) => {
   res.send(JSON.stringify(yaml, null, 2));
 });
 
-app.get('/pull/:imageTag', (req, res) => {
+app.post('/pull/:imageTag', (req, res) => {
   let [image, tag] = req.params['imageTag'].split(':');
   console.log(`Pulling ${image}:${tag}`);
   let apiOptions = {
@@ -114,7 +114,7 @@ app.get('/pull/:imageTag', (req, res) => {
   apiReq.end();
 });
 
-app.get('/containers/:containerId/:action', (req, res) => {
+app.post('/containers/:containerId/:action', (req, res) => {
   let action = req.params['action'];
 
   if (action == 'stop' || action == 'start' || action == 'restart') {

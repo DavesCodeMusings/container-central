@@ -1,11 +1,14 @@
+/**
+ * @global {object} images, a cached copy of the initial API call to /images.
+ */
 var images = {};
 
 /**
- * Make an async call to the API and pass the parsed JSON to the callback.
- * @param string path, as in http://host:port/path
- * @param function callback
+ * Make an async GET request to the API and pass the parsed JSON to the callback.
+ * @param {string} path, as in the path part of http://host:port/path, including the /
+ * @param {function} callback
  */
-function callAPI(path, callback) {
+function apiGet(path, callback) {
   let url = window.location.origin + path;
   document.body.style.cursor = 'wait';
   let xhttp = new XMLHttpRequest();
@@ -25,6 +28,30 @@ function callAPI(path, callback) {
 }
 
 /**
+ * Make an async POST request to the API and pass the parsed JSON to the callback.
+ * @param {string} path, as in the path part of http://host:port/path, including the /
+ * @param {function} callback
+ */
+ function apiPost(path, callback) {
+  let url = window.location.origin + path;
+  document.body.style.cursor = 'wait';
+  let xhttp = new XMLHttpRequest();
+  xhttp.onreadystatechange = function () {
+    if (this.readyState === 4) {
+      if (this.status === 200) {
+        callback(JSON.parse(this.responseText));
+      }
+      else {
+        alert(`Error communicating with server.\n${this.responseText}`);
+      }
+      document.body.style.cursor = 'default';
+    }
+  };
+  xhttp.open('POST', url, true);
+  xhttp.send();
+}
+
+/**
  * Callback function to create a copy of the /images API call results.
  * This is needed to match containers to image names rather than sha256 tags.
  * @param {object} imageApiResult, the data received from the API call.
@@ -40,7 +67,7 @@ function cacheImages(imageApiResult) {
  */
 function containerControl(action, containerId) {
   console.log(`Telling conntainer ${containerId} to ${action}`);
-  callAPI(`/containers/${containerId}/${action}`, alert);  // Pop up results when done.
+  apiPost(`/containers/${containerId}/${action}`, alert);  // Pop up results when done.
 }
 
 /**
@@ -50,7 +77,7 @@ function containerControl(action, containerId) {
  function pullImage(imageTag) {
   let encodedImageTag = encodeURIComponent(imageTag);
   console.log(`Pulling ${imageTag}`);
-  callAPI(`/pull/${encodedImageTag}`, alert);  // Pop up results when done.
+  apiPost(`/pull/${encodedImageTag}`, alert);  // Pop up results when done.
 }
 
 /**
