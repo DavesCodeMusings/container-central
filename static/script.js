@@ -77,8 +77,8 @@ function viewContainers(containerData) {
     content += `<img alt="${container.State}" src="icons/${stateIcon}"> ${container.Names[0].replace(/\//, '')}`;
     content += `<span class="controls">`;
     if (container.State == 'running') {
-      content += `<img alt="stop" src="icons/stop.svg">`;
-      content += `<img alt="restart" src="icons/restart.svg"><br>`;
+      content += `<a href="javascript:callAPI('/containers/${container.Id}/stop');" title="Stop container"><img alt="stop" src="icons/stop.svg"></a>`;
+      content += `<a href="javascript:callAPI('/containers/${container.Id}/restart');" title="Restart container"><img alt="restart" src="icons/restart.svg"></a><br>`;
     }
     else {
       content += `<a href="javascript:callAPI('/containers/${container.Id}/start');" title="Start container"><img alt="start" src="icons/play.svg"></a><br>`;

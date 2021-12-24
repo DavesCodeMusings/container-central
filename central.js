@@ -6,7 +6,7 @@
  */
 
 const dockerSocket = '/var/run/docker.sock';
-const listenPort = '8088'; 
+const listenPort = '8088';
 
 const express = require('express');  // npm install express for this one.
 const fs = require('fs');
@@ -22,7 +22,7 @@ function callAPI(req, res) {
     socketPath: dockerSocket,
     method: 'GET'
   };
- 
+
   switch (req.path) {
     case '/containers':
       apiOptions.path = req.path + '/json?all="true"';
@@ -80,9 +80,9 @@ app.get('/volumes', callAPI);
 
 app.get('/stacks', (req, res) => {
   let files = fs.readdirSync('compose');
-  let yaml = { };
+  let yaml = {};
   files.forEach(file => {
-    yaml[file] = fs.readFileSync(`compose/${file}`, { encoding:'utf8' });  
+    yaml[file] = fs.readFileSync(`compose/${file}`, { encoding: 'utf8' });
   });
   res.setHeader("Content-Type", "application/json");
   res.send(JSON.stringify(yaml, null, 2));
@@ -114,28 +114,36 @@ app.get('/pull/:imageTag', (req, res) => {
   apiReq.end();
 });
 
-app.get('/containers/:containerId/start', (req, res) => {
-  let containerId = req.params['containerId'];
-  let apiOptions = {
-    socketPath: dockerSocket,
-    method: 'POST',
-    path: `/containers/${containerId}/start`
-  };
-  let data = '';
-  const apiReq = http.request(apiOptions, (apiRes) => {
-    console.log(`${apiRes.statusCode} - ${apiOptions.path}`);
-    apiRes.on('data', d => {
-      data += d.toString();
+app.get('/containers/:containerId/:action', (req, res) => {
+  let action = req.params['action'];
+
+  if (action == 'stop' || action == 'start' || action == 'restart') {
+    let containerId = req.params['containerId'];
+    let apiOptions = {
+      socketPath: dockerSocket,
+      method: 'POST',
+      path: `/containers/${containerId}/${action}`
+    };
+    let data = '';
+
+    const apiReq = http.request(apiOptions, (apiRes) => {
+      console.log(`${apiRes.statusCode} - ${apiOptions.path}`);
+      apiRes.on('data', d => {
+        data += d.toString();
+      });
+      apiRes.on('end', () => {
+        res.setHeader("Content-Type", "application/json");
+        res.send(JSON.stringify(data, null, 2));
+      });
     });
-    apiRes.on('end', () => {
-      res.setHeader("Content-Type", "application/json");
-      res.send(JSON.stringify(data, null, 2));
+    apiReq.on('error', err => {
+      console.error(err)
     });
-  });
-  apiReq.on('error', err => {
-    console.error(err)
-  });
-  apiReq.end();
+    apiReq.end();
+  }
+  else {
+    res.send(`"${action} is not recognized."`);
+  }
 });
 
 var server = app.listen(listenPort, '0.0.0.0', () => {
