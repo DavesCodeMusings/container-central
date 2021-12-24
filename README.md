@@ -19,7 +19,9 @@ I'm running a single Raspberry Pi in my home. I trust my users. I have no need f
 Like most open source, I had an itch and I scratched it. This is the byproduct.
 
 ## How can I use it?
-There is a Docker image at: https://hub.docker.com/r/davescodemusings/container-central Or you can install node.js on your Pi and run it that way. The included `start.sh` script will help with that.
+There is a Docker image at: https://hub.docker.com/r/davescodemusings/container-central
+
+Or you can install node.js on your Pi and run it that way. The included `start.sh` script will help with that.
 
 ## Where's all this going?
 There are more features to add, but I'm starting small and working my way up. This is a hobby, not a business venture.
