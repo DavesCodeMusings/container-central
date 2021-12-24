@@ -19,9 +19,7 @@ I'm running a single Raspberry Pi in my home. I trust my users. I have no need f
 Like most open source, I had an itch and I scratched it. This is the byproduct.
 
 ## How can I use it?
-Currently, it requires Node.js to be installed on the host. There's a start.sh shell script that will get you going. Then point a web browser at http://yourhost:8080.
-
-There is also a Dockerfile to build a containerized version. Look at the `build.sh` and `run.sh` scripts to facilitate that.
+There is a Docker image at: https://hub.docker.com/r/davescodemusings/container-central Or you can install node.js on your Pi and run it that way. The included `start.sh` script will help with that.
 
 ## Where's all this going?
 There are more features to add, but I'm starting small and working my way up. This is a hobby, not a business venture.
