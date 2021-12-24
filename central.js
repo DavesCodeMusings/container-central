@@ -5,23 +5,24 @@
  * to docker-compose.yml files.
  */
 
+const dockerSocket = '/var/run/docker.sock';
 const listenPort = '8088'; 
+
 const express = require('express');  // npm install express for this one.
 const fs = require('fs');
 const http = require('http');
 
-var requestOptions = {  // The Docker API is a unix socket by default.
-  socketPath: '/var/run/docker.sock'
-};
-
 /**
- * Callback function used by several of the API GET requests.
+ * Callback function used for Docker API GET requests.
  * @param {object} req, the express.js request.
  * @param {object} res, the express.js response.
  */
 function callAPI(req, res) {
-  let apiOptions = requestOptions;
-
+  let apiOptions = {
+    socketPath: dockerSocket,
+    method: 'GET'
+  };
+ 
   switch (req.path) {
     case '/containers':
       apiOptions.path = req.path + '/json?all="true"';
@@ -35,7 +36,7 @@ function callAPI(req, res) {
 
   let data = '';
 
-  const apiReq = http.request(apiOptions, apiRes => {
+  const apiReq = http.request(apiOptions, (apiRes) => {
     console.log(`${apiRes.statusCode} - ${apiOptions.path}`);
     apiRes.on('data', d => {
       data += d.toString();
@@ -76,6 +77,7 @@ app.get('/script.js', (req, res) => {
 app.get('/containers', callAPI);
 app.get('/images', callAPI);
 app.get('/volumes', callAPI);
+
 app.get('/stacks', (req, res) => {
   let files = fs.readdirSync('compose');
   let yaml = { };
@@ -85,21 +87,48 @@ app.get('/stacks', (req, res) => {
   res.setHeader("Content-Type", "application/json");
   res.send(JSON.stringify(yaml, null, 2));
 });
+
 app.get('/pull/:imageTag', (req, res) => {
   let [image, tag] = req.params['imageTag'].split(':');
   console.log(`Pulling ${image}:${tag}`);
-  let apiOptions = requestOptions;
-  apiOptions.path = `/images/create?fromImage=${image}&platform=arm&repo=hub.docker.com&tag=${tag}`;
-  apiOptions.method = 'POST';
+  let apiOptions = {
+    socketPath: dockerSocket,
+    method: 'POST',
+    path: `/images/create?fromImage=${image}&platform=arm&repo=hub.docker.com&tag=${tag}`
+  };
+
   let data = '';
-  const apiReq = http.request(apiOptions, apiRes => {
+  const apiReq = http.request(apiOptions, (apiRes) => {
     console.log(`${apiRes.statusCode} - ${apiOptions.path}`);
     apiRes.on('data', d => {
       data += d.toString();
     });
     apiRes.on('end', () => {
       res.setHeader("Content-Type", "application/json");
-      // res.send(JSON.stringify(`${req.params['imageTag']}`));
+      res.send(JSON.stringify(data, null, 2));
+    });
+  });
+  apiReq.on('error', err => {
+    console.error(err)
+  });
+  apiReq.end();
+});
+
+app.get('/containers/:containerId/start', (req, res) => {
+  let containerId = req.params['containerId'];
+  let apiOptions = {
+    socketPath: dockerSocket,
+    method: 'POST',
+    path: `/containers/${containerId}/start`
+  };
+  let data = '';
+  const apiReq = http.request(apiOptions, (apiRes) => {
+    console.log(`${apiRes.statusCode} - ${apiOptions.path}`);
+    apiRes.on('data', d => {
+      data += d.toString();
+    });
+    apiRes.on('end', () => {
+      res.setHeader("Content-Type", "application/json");
       res.send(JSON.stringify(data, null, 2));
     });
   });
@@ -114,4 +143,3 @@ var server = app.listen(listenPort, '0.0.0.0', () => {
   let port = server.address().port;
   console.log(`Listening on ${addr}:${port}.`);
 });
-
