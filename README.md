@@ -1,5 +1,5 @@
 # Container Central
-A low-tech solution to managing Docker containers.
+A totally low-tech, not ready for prime time solution for managing Docker containers.
 
 ## What is it?
 Container Central is a very stripped down management web-based tool for Docker containers. My target is a Raspberry Pi running Docker and a handful of containers. That's it.
