@@ -1,4 +1,12 @@
 {
+  "name": "Container Central",
+  "version": "0.1",
+  "description": "Minimalist Docker Management",
+  "author": "David Horton <https://github.com/DavesCodeMusings>",
+  "main": "central.js",
+  "scripts": {
+    "start": "node central.js"
+  },
   "dependencies": {
     "express": "^4.17.2"
   }

@@ -6,7 +6,7 @@ var images = {};
  * @param function callback
  */
 function callAPI(path, callback) {
-  let url = 'http://anubis.home:8088' + path;
+  let url = window.location.origin + path;
   document.body.style.cursor = 'wait';
   let xhttp = new XMLHttpRequest();
   xhttp.onreadystatechange = function () {
