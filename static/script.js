@@ -34,10 +34,20 @@ function cacheImages(imageApiResult) {
 }
 
 /**
- * A wrapper for the /pull AI call that URI encodes the image tag.
- * @param {string} imageTag, in the format name:tag. (e.g. debian:unstable)
+ * A wrapper for the /container start/stop API calls.
+ * @param {string} action, one of: start, stop, restart.
+ * @param {string} containerId, the uuid of the container.
  */
-function pullImage(imageTag) {
+function containerControl(action, containerId) {
+  console.log(`Telling conntainer ${containerId} to ${action}`);
+  callAPI(`/containers/${containerId}/${action}`, alert);  // Pop up results when done.
+}
+
+/**
+ * A wrapper for the /pull API call that URI encodes the image tag.
+ * @param {string} imageTag, in the format name:tag. (e.g. debian:lite)
+ */
+ function pullImage(imageTag) {
   let encodedImageTag = encodeURIComponent(imageTag);
   console.log(`Pulling ${imageTag}`);
   callAPI(`/pull/${encodedImageTag}`, alert);  // Pop up results when done.
@@ -77,11 +87,11 @@ function viewContainers(containerData) {
     content += `<img alt="${container.State}" src="icons/${stateIcon}"> ${container.Names[0].replace(/\//, '')}`;
     content += `<span class="controls">`;
     if (container.State == 'running') {
-      content += `<a href="javascript:callAPI('/containers/${container.Id}/stop');" title="Stop container"><img alt="stop" src="icons/stop.svg"></a>`;
-      content += `<a href="javascript:callAPI('/containers/${container.Id}/restart');" title="Restart container"><img alt="restart" src="icons/restart.svg"></a><br>`;
+      content += `<a href="javascript:containerControl('stop', '${container.Id}');" title="Stop container"><img alt="stop" src="icons/stop.svg"></a>`;
+      content += `<a href="javascript:containerControl('restart', '${container.Id}');" title="Restart container"><img alt="restart" src="icons/restart.svg"></a><br>`;
     }
     else {
-      content += `<a href="javascript:callAPI('/containers/${container.Id}/start');" title="Start container"><img alt="start" src="icons/play.svg"></a><br>`;
+      content += `<a href="javascript:containerControl('start', '${container.Id}');" title="Start container"><img alt="start" src="icons/play.svg"></a><br>`;
     }
     content += `</span>`;
     content += `</summary>`;

@@ -127,13 +127,23 @@ app.get('/containers/:containerId/:action', (req, res) => {
     let data = '';
 
     const apiReq = http.request(apiOptions, (apiRes) => {
-      console.log(`${apiRes.statusCode} - ${apiOptions.path}`);
       apiRes.on('data', d => {
         data += d.toString();
       });
       apiRes.on('end', () => {
-        res.setHeader("Content-Type", "application/json");
-        res.send(JSON.stringify(data, null, 2));
+        console.log(`${apiRes.statusCode} - ${apiOptions.path}`);
+        let message = '';
+        switch (apiRes.statusCode) {
+          case 204:
+            message = `"success"`;
+            break;
+          case 304:
+            message = `"unchanged"`;
+            break;
+          default:
+            message = `"unknown"`;
+        }
+        res.send(message);
       });
     });
     apiReq.on('error', err => {
