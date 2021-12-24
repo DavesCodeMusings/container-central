@@ -21,6 +21,10 @@ details > summary {
   list-style: none;
 }
 
+img {
+  vertical-align: text-top;
+}
+
 .lg {
   height: 5vw;
   width: auto;
