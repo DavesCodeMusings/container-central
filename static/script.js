@@ -113,10 +113,10 @@ function viewImages(imageData) {
 
     let repoTag = '[none]';  // When an image is updated, but a container still runs an old image,
     if (image.RepoTags) {    // it's possible to have a null tag.
-      repoTag = image.RepoTags[0];
+      repoTag = image.RepoTags[0].replace(/</g, '&lt;').replace(/>/g, '&gt');
     }
     else if (image.RepoDigests) {
-      repoTag = image.RepoDigests[0].replace(/@sha256.*/, ':[none]');
+      repoTag = image.RepoDigests[0].replace(/@sha256.*/, ':&lt;none&gt;');
     }
 
     content += `<details>`;
