@@ -90,7 +90,6 @@ app.get('/stacks', (req, res) => {
 
 app.post('/pull/:imageTag', (req, res) => {
   let [image, tag] = req.params['imageTag'].split(':');
-  console.log(`Pulling ${image}:${tag}`);
   let apiOptions = {
     socketPath: dockerSocket,
     method: 'POST',
