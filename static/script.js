@@ -69,6 +69,8 @@ function viewContainers(containerData) {
         stateIcon = 'question.svg'
     }
 
+    let id = container.ImageID.replace(/^sha256:/, '');
+
     let imageTag = container.ImageID;  // Use the sha256 ImageID as the fallback name, but...
     images.forEach(image => {          // Look for a match in the known images for a more friendly name.
       if (image.Id == container.ImageID) {
@@ -81,7 +83,8 @@ function viewContainers(containerData) {
     content += `<details>`;
     content += `<summary><img alt="${container.State}" src="icons/${stateIcon}"> ${container.Names[0].replace(/\//, '')}</summary>`;
     content += `<p>`;
-    content += `${imageTag}<br>`
+    content += `${id}<br>`;
+    content += `${imageTag}<br>`;
     content += `${createDate}<br>`;
     content += `${container.Status}<br>`;
 // TODO: Actions for container stopping/starting.
@@ -104,6 +107,7 @@ function viewContainers(containerData) {
 function viewImages(imageData) {
   let content = '<h2>Images</h2>';
   let now = new Date();  // Used as a baseline to calculate image age.
+
   imageData.forEach(image => {
     let createDate = new Date(image.Created * 1000).toLocaleString();
     let ageIcon = 'icons/calendar-clock.svg';
@@ -111,22 +115,26 @@ function viewImages(imageData) {
       ageIcon = 'icons/calendar-check.svg';
     }
 
-    let repoTag = '[none]';  // When an image is updated, but a container still runs an old image,
-    if (image.RepoTags) {    // it's possible to have a null tag.
+    let repoTag = '&lt;none&gt;';  // When an image is updated, but a container still runs an old image,
+    if (image.RepoTags) {          // it's possible to have a null tag.
       repoTag = image.RepoTags[0].replace(/</g, '&lt;').replace(/>/g, '&gt');
     }
     else if (image.RepoDigests) {
       repoTag = image.RepoDigests[0].replace(/@sha256.*/, ':&lt;none&gt;');
     }
 
+    let id = image.Id.replace(/^sha256:/, '');
+
     content += `<details>`;
     content += `<summary><img alt="freshness indicator" src=${ageIcon}> ${repoTag}</summary>`;
     content += `<p>`;
+    content += `${id}<br>`;
     content += `${createDate} ${Math.round(image.Size / 1048576)}M<br>`;
     content += `<a href="javascript:pullImage('${repoTag}')" title="Pull latest image"><img alt="pull" src="icons/download.svg"></a>`;
     content += `</p>`;
     content += `</details>`;
   });
+
   document.getElementsByTagName('main')[0].innerHTML = content;
 }
 
