@@ -21,6 +21,15 @@ details > summary {
   list-style: none;
 }
 
+.controls {
+  display: none;
+  padding-left: 1em;
+}
+
+summary:hover > .controls {
+  display: inline;
+}
+
 img {
   vertical-align: text-top;
 }

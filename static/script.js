@@ -34,19 +34,12 @@ function cacheImages(imageApiResult) {
 }
 
 /**
- * A wrapper for the /pull AI call that replaces the tag name with latest if
- * it happens to be something different. (e.g. alpine:3 becomes alpine:latest)
+ * A wrapper for the /pull AI call that URI encodes the image tag.
  * @param {string} imageTag, in the format name:tag. (e.g. debian:unstable)
  */
 function pullImage(imageTag) {
-  let [image, tag] = imageTag.split(':');
-  if (tag != 'latest') {
-    if (confirm(`Pull ${image}:latest rather than ${image}:${tag}?`)) {
-      tag = 'latest';
-    }
-  }
-  let encodedImageTag = encodeURIComponent(`${image}:${tag}`);
-  console.log(`Pulling ${encoded}`);
+  let encodedImageTag = encodeURIComponent(imageTag);
+  console.log(`Pulling ${imageTag}`);
   callAPI(`/pull/${encodedImageTag}`, alert);  // Pop up results when done.
 }
 
@@ -56,6 +49,7 @@ function pullImage(imageTag) {
  */
 function viewContainers(containerData) {
   let content = '<h2>Containers</h2>';
+
   containerData.forEach(container => {
     let stateIcon = '';
     switch (container.State) {
@@ -66,10 +60,8 @@ function viewContainers(containerData) {
         stateIcon = 'stop-circle.svg';
         break;
       default:
-        stateIcon = 'question.svg'
+        stateIcon = 'question.svg';
     }
-
-    let id = container.ImageID.replace(/^sha256:/, '');
 
     let imageTag = container.ImageID;  // Use the sha256 ImageID as the fallback name, but...
     images.forEach(image => {          // Look for a match in the known images for a more friendly name.
@@ -81,22 +73,27 @@ function viewContainers(containerData) {
     let createDate = new Date(container.Created * 1000).toLocaleString();  // API uses unix epoch time.
 
     content += `<details>`;
-    content += `<summary><img alt="${container.State}" src="icons/${stateIcon}"> ${container.Names[0].replace(/\//, '')}</summary>`;
+    content += `<summary>`;
+    content += `<img alt="${container.State}" src="icons/${stateIcon}"> ${container.Names[0].replace(/\//, '')}`;
+    content += `<span class="controls">`;
+    if (container.State == 'running') {
+      content += `<img alt="stop" src="icons/stop.svg">`;
+      content += `<img alt="restart" src="icons/restart.svg"><br>`;
+    }
+    else {
+      content += `<a href="javascript:callAPI('/containers/${container.Id}/start');" title="Start container"><img alt="start" src="icons/play.svg"></a><br>`;
+    }
+    content += `</span>`;
+    content += `</summary>`;
     content += `<p>`;
-    content += `${id}<br>`;
+    content += `${container.Id}<br>`;
     content += `${imageTag}<br>`;
     content += `${createDate}<br>`;
     content += `${container.Status}<br>`;
-// TODO: Actions for container stopping/starting.
-//    if (container.State == 'running') {
-//      content += `<img alt="stop" src="icons/stop.svg"> <img alt="restart" src="icons/restart.svg"><br>`;
-//    }
-//    else {
-//      content += `<img alt="start" src="icons/play.svg"><br>`;
-//    }
     content += `</p>`;
     content += `</details>`;
   });
+
   document.getElementsByTagName('main')[0].innerHTML = content;
 }
 
@@ -123,14 +120,17 @@ function viewImages(imageData) {
       repoTag = image.RepoDigests[0].replace(/@sha256.*/, ':&lt;none&gt;');
     }
 
-    let id = image.Id.replace(/^sha256:/, '');
-
     content += `<details>`;
-    content += `<summary><img alt="freshness indicator" src=${ageIcon}> ${repoTag}</summary>`;
-    content += `<p>`;
-    content += `${id}<br>`;
-    content += `${createDate} ${Math.round(image.Size / 1048576)}M<br>`;
+    content += `<summary>`;
+    content += `<img alt="freshness indicator" src=${ageIcon}> ${repoTag}`;
+    content += `<span class="controls">`;
     content += `<a href="javascript:pullImage('${repoTag}')" title="Pull latest image"><img alt="pull" src="icons/download.svg"></a>`;
+    content += `</span>`;
+    content += `</summary>`;
+    content += `<p>`;
+    content += `${image.Id}<br>`;
+    content += `${createDate}<br>`;
+    content += `${Math.round(image.Size / 1048576)}M<br>`;
     content += `</p>`;
     content += `</details>`;
   });
