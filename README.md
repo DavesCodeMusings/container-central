@@ -29,7 +29,7 @@ My idea is to focus on the features needed for a typical Raspberry Pi home serve
 2. You have a docker-compose.yml that you've used to deploy one or more containers. You can copy the docker-compose.yml to Container Central's _compose_ directory. Now you can control the stack by pointing and clicking.
 3. You've got old containers or images that you want to remove. Sorry, Container Central can't do that yet. You'll have to use `docker rm` or another tool.
 
-There are more features to add, but I'm starting small and working my way up. This is a hobby, not a business venture. But, Container Central has dark mode. Did I mention dark mode?
+There are more features to add, but I'm starting small and working my way up. This is a hobby, not a business venture.
 
 ## Are there screenshots or what???
 You betcha!
