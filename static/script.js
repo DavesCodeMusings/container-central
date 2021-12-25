@@ -61,13 +61,23 @@ function cacheImages(imageApiResult) {
 }
 
 /**
- * A wrapper for the /container start/stop API calls.
+ * A wrapper for the /containers start, stop API calls.
  * @param {string} action, one of: start, stop, restart.
  * @param {string} containerId, the uuid of the container.
  */
 function containerControl(action, containerId) {
   console.log(`Telling conntainer ${containerId} to ${action}`);
   apiPost(`/containers/${containerId}/${action}`, alert);  // Pop up results when done.
+}
+
+/**
+ * A wrapper for the /stacks up, down, restart API calls.
+ * @param {string} action, one of: start, stop, restart.
+ * @param {string} containerId, the uuid of the container.
+ */
+ function stackControl(action, stackName) {
+  console.log(`docker-compose ${stackName} ${action}`);
+  apiPost(`/stacks/${stackName}/${action}`, alert);  // Pop up results when done.
 }
 
 /**
@@ -182,16 +192,24 @@ function viewImages(imageData) {
 function viewStacks(stackData) {
   let content = '<h2>Stacks</h2>';
   let yamlFiles = Object.keys(stackData);
+
   yamlFiles.forEach(composeFile => {
+    let stackName = composeFile.replace(/.yml/, '');
+    let linesInFile = stackData[composeFile].split('\n').length;
+
     content += `<details>`;
-    content += `<p>`;
-    content += `<summary><img alt="stack icon" src='icons/view-dashboard-outline.svg'> ${composeFile.replace(/.yaml$/, '').replace(/.yml$/, '')}</summary>`;
-    content += `<textarea rows="20" cols="60" readonly wrap="off">${stackData[composeFile]}</textarea><br>`;
-// TODO: Actions to bring stacks up/down using docker-compose.
-//    content += `<img alt="down" src="icons/arrow-down-thick.svg"> <img alt="start" src="icons/arrow-up-thick.svg"> <img alt="restart" src="icons/arrow-u-up-right-bold.svg"><br>`
-    content += `</p>`;
+    content += `<summary>`;
+    content += `<img alt="stack icon" src='icons/view-dashboard-outline.svg'> ${composeFile.replace(/.yaml$/, '').replace(/.yml$/, '')}`;
+    content += `<span class="controls">`;
+    content += `<a href="javascript:stackControl('up', '${stackName}');" title="Deploy Stack"><img alt="Up" src="icons/arrow-up-thick.svg"></a>`;
+    content += `<a href="javascript:stackControl('down', '${stackName}');" title="Remove Stack"><img alt="Up" src="icons/arrow-down-thick.svg"></a>`;
+    content += `<a href="javascript:stackControl('restart', '${stackName}');" title="Restart Stack"><img alt="Up" src="icons/arrow-u-up-right-bold.svg"></a><br>`;
+    content += `</span>`;
+    content += `</summary>`;
+    content += `<textarea rows="${linesInFile}" cols="60" readonly wrap="off">${stackData[composeFile]}</textarea><br>`;
     content += `</details>`;
   });
+
   document.getElementsByTagName('main')[0].innerHTML = content;
 }
 
