@@ -29,17 +29,20 @@ There are more features to add, but I'm starting small and working my way up. Th
 ## Are there screenshots or what???
 You betcha!
 
-### Containers
+(Screenshots were taken in dark mode. Yes! There is a dark mode.)
 
-![image](https://user-images.githubusercontent.com/61114342/147370959-509a9cec-a50d-4a12-8722-e32ff8312b5f.png)
+### Mobile Device...
 
-The image above is the containers view. There's a round play button icon to show the container is running (triangle) or stopped (square).  Container details are shown when you click on the container name to expand. (See mosquitto container.) If you hover over the container name, you'll get controls to stop, start, restart depending on the state of the container. (See esphome container.)
+![image](https://user-images.githubusercontent.com/61114342/147377658-d974fb08-271c-4ed7-9474-ce201ad5ebdc.png)
 
-### Images
+_Containers view shown in portrait mode on simulated mobile phone_
 
-![image](https://user-images.githubusercontent.com/61114342/147370973-69cefbf0-5971-4806-b6ff-750621eab95c.png)
+![image](https://user-images.githubusercontent.com/61114342/147377722-1a578d30-0e7e-4c74-8101-cfd59cde6140.png)
 
-The screenshot above is the images view. The calendar with a clock icon indicates the image is more than 30 days old. Expanding shows details. Hovering gives the option to pull a new image.
+_Container images view shown in landscape mode mobile phone._
 
-### More
-There are also stack (docker-compose) and volume views. These are features still in development.
+### Laptop / Desktop...
+
+![image](https://user-images.githubusercontent.com/61114342/147377790-d847aa4b-4b40-4009-84d8-a481206aaccf.png)
+
+_Stacks view shown on a typical landscape mode display panel._
