@@ -14,22 +14,15 @@
 <!-- The /images API call allows image data to be cached and used when matching containers to image names. -->
 <body onload="apiGet('/images', cacheImages);">
   <nav>
-    <ul>
-      <li style="list-style-image: url(icons/cube-outline.svg);" onclick="apiGet('/containers', viewContainers);">Containers</li>
-      <li style="list-style-image: url(icons/file-outline.svg);" onclick="apiGet('/images', viewImages);">Images</li>
-      <li style="list-style-image: url(icons/view-dashboard-outline.svg);" onclick="apiGet('/stacks', viewStacks);">Stacks</li>
-      <li style="list-style-image: url(icons/database-outline.svg);" onclick="apiGet('/volumes', viewVolumes);">Volumes</li>
-    </ul>
+    <p><span class="nav-heading">Container Central</span><br>
+      <a href="javascript:apiGet('/containers', viewContainers)" title="Container View"><img alt="container" src="icons/cube-outline.svg"><span class="label">Containers</span></a>
+      <a href="javascript:apiGet('/images', viewImages);" title="Image View"><img alt="image" src="icons/file-outline.svg"><span class="label">Images</span></a>
+      <a href="javascript:apiGet('/stacks', viewStacks);" title="Stack View"><img alt="stack" src="icons/view-dashboard-outline.svg"><span class="label">Stacks</span></a>
+      <a href="javascript:apiGet('/volumes', viewVolumes);" title="Volume View"><img alt="volume" src="icons/database-outline.svg"><span class="label">Volumes</span></a>
+    </p>
   </nav>
 
   <main>
-    <p style="padding-top: 6vh;">Container Central<br>
-      <img class="lg" alt="container" src="icons/cube-outline.svg">
-      <img class="lg" alt="container image" src="icons/file-outline.svg">
-      <img class="lg" alt="container stack" src="icons/view-dashboard-outline.svg">
-      <img class="lg" alt="container volume" src="icons/database-outline.svg">
-      <img class="lg" alt="heart" src="icons/heart-outline.svg">
-    </p>
   </main>
 </body>
 
