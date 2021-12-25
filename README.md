@@ -34,7 +34,7 @@ There are more features to add, but I'm starting small and working my way up. Th
 ## Are there screenshots or what???
 You betcha!
 
-(Screenshots were taken in dark mode. Yes! There is a dark mode.)
+(Mobile device screenshots were taken in dark mode. Yes! There is a dark mode.)
 
 ### Mobile Device...
 
