@@ -162,7 +162,7 @@ app.post('/stacks/:stackName/:action', (req, res) => {
   let action = req.params['action'];
   let composeDir = process.cwd() + '/compose';
 
-  if (action == 'up' || action == 'down') {
+  if (action == 'down' || action == 'up' || action == 'restart') {
     fs.stat(`${composeDir}/${stackName}.yml`, (err, stat) => {
       if (err) {
         res.status(404);
