@@ -6,8 +6,10 @@
  */
 
 const dockerSocket = '/var/run/docker.sock';
+const dockerCompose = '/usr/local/bin/docker-compose';
 const listenPort = '8088';
 
+const { exec } = require('child_process');
 const express = require('express');  // npm install express for this one.
 const fs = require('fs');
 const http = require('http');
@@ -88,31 +90,6 @@ app.get('/stacks', (req, res) => {
   res.send(JSON.stringify(yaml, null, 2));
 });
 
-app.post('/pull/:imageTag', (req, res) => {
-  let [image, tag] = req.params['imageTag'].split(':');
-  let apiOptions = {
-    socketPath: dockerSocket,
-    method: 'POST',
-    path: `/images/create?fromImage=${image}&platform=arm&repo=hub.docker.com&tag=${tag}`
-  };
-
-  let data = '';
-  const apiReq = http.request(apiOptions, (apiRes) => {
-    console.log(`${apiRes.statusCode} - ${apiOptions.path}`);
-    apiRes.on('data', d => {
-      data += d.toString();
-    });
-    apiRes.on('end', () => {
-      res.setHeader("Content-Type", "application/json");
-      res.send(JSON.stringify(data, null, 2));
-    });
-  });
-  apiReq.on('error', err => {
-    console.error(err)
-  });
-  apiReq.end();
-});
-
 app.post('/containers/:containerId/:action', (req, res) => {
   let action = req.params['action'];
 
@@ -152,6 +129,82 @@ app.post('/containers/:containerId/:action', (req, res) => {
   }
   else {
     res.send(`"${action} is not recognized."`);
+  }
+});
+
+app.post('/pull/:imageTag', (req, res) => {
+  let [image, tag] = req.params['imageTag'].split(':');
+  let apiOptions = {
+    socketPath: dockerSocket,
+    method: 'POST',
+    path: `/images/create?fromImage=${image}&platform=arm&repo=hub.docker.com&tag=${tag}`
+  };
+
+  let data = '';
+  const apiReq = http.request(apiOptions, (apiRes) => {
+    console.log(`${apiRes.statusCode} - ${apiOptions.path}`);
+    apiRes.on('data', d => {
+      data += d.toString();
+    });
+    apiRes.on('end', () => {
+      res.setHeader("Content-Type", "application/json");
+      res.send(JSON.stringify(data, null, 2));
+    });
+  });
+  apiReq.on('error', err => {
+    console.error(err)
+  });
+  apiReq.end();
+});
+
+app.post('/stacks/:stackName/:action', (req, res) => {
+  let stackName = req.params['stackName'];
+  let action = req.params['action'];
+  let composeDir = process.cwd() + '/compose';
+
+  if (action == 'up' || action == 'down') {
+    fs.stat(`${composeDir}/${stackName}.yml`, (err, stat) => {
+      if (err) {
+        res.status(404);
+        res.send(`"${err.code} when looking for ${composeDir}/${stackName}.yml"`);
+      }
+      else {
+        fs.stat(dockerCompose, (err, stat) => {
+          if (err) {
+            res.status(404);
+            res.send(`"${err.code} when looking for ${dockerCompose}`);
+          }
+          else {
+            if (action == 'up') {
+              exec(`${dockerCompose} -f ${stackName}.yml -p ${stackName} up -d`, { cwd: composeDir }, (err, stdout, stderr) => {
+                if (err) {
+                  res.status(404);
+                  res.send(`"${stderr}"`);
+                }
+                else {
+                  res.send(`"${stdout}"`);
+                }
+              });
+            }
+            else {
+              exec(`${dockerCompose} -f ${stackName}.yml -p ${stackName} ${action}`, { cwd: composeDir }, (err, stdout, stderr) => {
+                if (err) {
+                  res.status(404);
+                  res.send(`"${stderr}"`);
+                }
+                else {
+                  res.send(`"${stdout}"`);
+                }
+              });
+            }
+          }
+        });
+      }
+    });
+  }
+  else {
+    res.status(406);
+    res.send(`"${action} is not a supported action."`)
   }
 });
 
