@@ -13,7 +13,7 @@ In the future, I plan to add:
 ## Why?
 There are pleny of full-featured container management apps out there. Portainer is one of my favorites. But all the ones I've looked at have "enterprise features" in an attempt to get you to pay for a license rather than using the "community version".
 
-I'm running a single Raspberry Pi in my home. I trust my users. I have no need for any enterprise features. I just want simple. Like most open source, I had an itch and I scratched it. This is the byproduct.
+I'm running a single Raspberry Pi in my home. I trust my users. I have no need for any enterprise features. I just want simple. Like most open source developers, I had an itch and I scratched it. This is the byproduct.
 
 ## How can I use it?
 There is a Docker image at: https://hub.docker.com/r/davescodemusings/container-central and instructions on how to deploy it. This is probably the easiest method.
