@@ -39,6 +39,10 @@ details > summary {
   padding-left: 1em;
 }
 
+details[open] .controls {
+  display: inline;
+}
+
 summary:hover > .controls {
   display: inline;
 }
