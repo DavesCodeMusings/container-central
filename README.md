@@ -18,7 +18,7 @@ I'm running a single Raspberry Pi in my home. I trust my users. I have no need f
 ## How can I use it?
 There is a Docker image at: https://hub.docker.com/r/davescodemusings/container-central and instructions on how to deploy it. This is probably the easiest method.
 
-You can install node.js on your Pi and run it that way. Start it up using the command `./central.js` to start it up and try it out, or use `start.sh` to run it as a background process.
+You can also install node.js on your Pi and run it that way. Start it up using the command `./central.js` to start it up and try it out, or use `start.sh` to run it as a background process.
 
 ## Where's all this going?
 Currently, Container Central can manage already deployed conainers and Docker Compose stacks. It cannot run a new container or create a new docker-compose.yml. It can't deal with swarm mode or kubernetes. But, it can start, stop or restart existing containers. It can pull the latest version of any images from Docker Hub. It can deploy and remove Docker Compose projects if a YAML file exists.
