@@ -18,7 +18,8 @@ catch {
   console.warn(`${configFile} not found. Using default values.`);
 }
 const dockerSocket = '/var/run/docker.sock';
-const dockerCompose = '/usr/local/bin/docker-compose';
+const composeBinary = '/usr/local/bin/docker-compose';
+const composeDirectory = config.composeDirectory || process.cwd() + '/compose';
 const listenPort = config.listenPort || '8088';
 
 /**
@@ -103,7 +104,7 @@ app.get('/info', (req, res) => {
     apiRes.on('end', () => {
       console.log(`${apiRes.statusCode} - ${apiOptions.path}`);
       let info = JSON.parse(data);
-      let files = fs.readdirSync('compose');
+      let files = fs.readdirSync(composeDirectory);
       info.stacks = files.length;
       res.setHeader("Content-Type", "application/json");
       res.send(JSON.stringify(info, null, 2));
@@ -116,12 +117,12 @@ app.get('/info', (req, res) => {
 });
 
 app.get('/stacks', (req, res) => {
-  let files = fs.readdirSync('compose');
+  let files = fs.readdirSync(composeDirectory);
   let stackInfo = [];
   files.forEach(file => {
     let info = {
       filename: file,
-      content: fs.readFileSync(`compose/${file}`, { encoding: 'utf8' })
+      content: fs.readFileSync(`${composeDirectory}/${file}`, { encoding: 'utf8' })
     }
     stackInfo.push(info);
   });
@@ -171,6 +172,44 @@ app.post('/containers/:containerId/:action', (req, res) => {
   }
 });
 
+app.post('/:target/prune', (req, res) => {
+  let target = req.params['target'];
+  if (target == 'containers' || target == 'images' || target == 'volumes') {
+    let apiOptions = {
+      socketPath: dockerSocket,
+      method: 'POST',
+      path: `/${target}/prune`
+    };
+
+    if (target == 'containers' || target == 'images' || target == 'volumes') {
+      console.log(`Pruning ${target}`);
+      let data = '';
+
+      const apiReq = http.request(apiOptions, (apiRes) => {
+        apiRes.on('data', d => {
+          data += d.toString();
+        });
+        apiRes.on('end', () => {
+          console.log(`${apiRes.statusCode} - ${apiOptions.path}`);
+          console.log(data);
+          res.status(apiRes.statusCode);
+          res.send('"success"');  // JSON is expected by the client, so extra quoting is required.
+        });
+      });
+      apiReq.on('error', err => {
+        console.error(err);
+        console.log(data);
+        res.status(apiRes.statusCode);
+        res.send('"error"');
+      });
+      apiReq.end();
+    }
+    else {
+      res.send(`"${target} is not recognized."`);
+    }
+  }
+});
+
 app.post('/pull/:imageTag', (req, res) => {
   let [image, tag] = req.params['imageTag'].split(':');
   let apiOptions = {
@@ -199,23 +238,22 @@ app.post('/pull/:imageTag', (req, res) => {
 app.post('/stacks/:stackName/:action', (req, res) => {
   let stackName = req.params['stackName'];
   let action = req.params['action'];
-  let composeDir = process.cwd() + '/compose';
 
   if (action == 'down' || action == 'up' || action == 'restart') {
-    fs.stat(`${composeDir}/${stackName}.yml`, (err, stat) => {
+    fs.stat(`${composeDirectory}/${stackName}.yml`, (err, stat) => {
       if (err) {
         res.status(404);
-        res.send(`"${err.code} when looking for ${composeDir}/${stackName}.yml"`);
+        res.send(`"${err.code} when looking for ${composeDirectory}/${stackName}.yml"`);
       }
       else {
-        fs.stat(dockerCompose, (err, stat) => {
+        fs.stat(composeBinary, (err, stat) => {
           if (err) {
             res.status(404);
-            res.send(`"${err.code} when looking for ${dockerCompose}`);
+            res.send(`"${err.code} when looking for ${composeBinary}`);
           }
           else {
             if (action == 'up') {
-              exec(`${dockerCompose} -f ${stackName}.yml -p ${stackName} up -d`, { cwd: composeDir }, (err, stdout, stderr) => {
+              exec(`${composeBinary} -f ${stackName}.yml -p ${stackName} up -d`, { cwd: composeDirectory }, (err, stdout, stderr) => {
                 if (err) {
                   res.status(404);
                   res.send(`"${stderr}"`);
@@ -226,7 +264,7 @@ app.post('/stacks/:stackName/:action', (req, res) => {
               });
             }
             else {
-              exec(`${dockerCompose} -f ${stackName}.yml -p ${stackName} ${action}`, { cwd: composeDir }, (err, stdout, stderr) => {
+              exec(`${composeBinary} -f ${stackName}.yml -p ${stackName} ${action}`, { cwd: composeDirectory }, (err, stdout, stderr) => {
                 if (err) {
                   res.status(404);
                   res.send(`"${stderr}"`);

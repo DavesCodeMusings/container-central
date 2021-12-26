@@ -90,7 +90,7 @@ function viewInfo(info) {
     </p>
   `;
 
-  info.ram = (info.MemTotal / 1024 / 1024 / 1024).toFixed(2);
+  info.ram = (info.MemTotal / 1024 / 1024 / 1024).toFixed(2);  // measuring in Gig seems a safe bet
 
   // Replace template entries like {{property}} with properties found in the info object.
   html += template.replace(/{{\w+}}/g, (match) => {
@@ -107,8 +107,28 @@ function viewInfo(info) {
  * @param {string} containerId, the uuid of the container.
  */
 function containerControl(action, containerId) {
-  console.log(`Telling conntainer ${containerId} to ${action}`);
-  apiPost(`/containers/${containerId}/${action}`, alert);  // Pop up results when done.
+  if (containerId) {
+    console.log(`Telling conntainer ${containerId} to ${action}`);
+    apiPost(`/containers/${containerId}/${action}`, alert);  // Pop up results when done.
+  }
+  else {
+    apiPost(`/containers/${action}`, alert);
+  }
+}
+
+/**
+ * A wrapper for the /images API call that URI encodes the image tag.
+ * @param {string} action, one of: pull, prune.
+ * @param {string} imageTag, in the format name:tag. (e.g. debian:lite)
+ */
+function imageControl(action, imageTag) {
+  if (action == 'pull') {
+    let encodedImageTag = encodeURIComponent(imageTag);
+    apiPost(`/pull/${encodedImageTag}`, alert);  // Pop up results when done.
+  }
+  if (action == 'prune') {
+    apiPost('/images/prune', alert);
+  }
 }
 
 /**
@@ -116,19 +136,9 @@ function containerControl(action, containerId) {
  * @param {string} action, one of: start, stop, restart.
  * @param {string} containerId, the uuid of the container.
  */
-function stackControl(action, stackName) {
+ function stackControl(action, stackName) {
   console.log(`docker-compose ${stackName} ${action}`);
   apiPost(`/stacks/${stackName}/${action}`, alert);  // Pop up results when done.
-}
-
-/**
- * A wrapper for the /pull API call that URI encodes the image tag.
- * @param {string} imageTag, in the format name:tag. (e.g. debian:lite)
- */
-function pullImage(imageTag) {
-  let encodedImageTag = encodeURIComponent(imageTag);
-  console.log(`Pulling ${imageTag}`);
-  apiPost(`/pull/${encodedImageTag}`, alert);  // Pop up results when done.
 }
 
 /**
@@ -155,6 +165,7 @@ function viewContainers(containerData) {
     </details>
   `;
 
+  let anyStopped = 0;
   containerData.forEach(container => {
     switch (container.State) {
       case 'running':
@@ -162,6 +173,7 @@ function viewContainers(containerData) {
         break;
       case 'exited':
         container.stateIcon = 'stop-circle.svg';
+        anyStopped++;
         break;
       default:
         container.stateIcon = 'question.svg';
@@ -185,6 +197,9 @@ function viewContainers(containerData) {
     });
   });
 
+  if (anyStopped) {
+    html += '<p><a href="javascript:containerControl(\'prune\');" title="Delete Stopped Containers"><img alt="trash-can" src="icons/trash-can-outline.svg"></a><p>';
+  }
   document.getElementsByTagName('main')[0].innerHTML = html;
 }
 
@@ -198,7 +213,7 @@ function viewImages(imageData) {
     <details>
       <summary><img alt="freshness indicator" src={{ageIcon}}> {{tag}}
         <span class="controls">
-          <a href="javascript:pullImage('{{tag}}')" title="Pull latest image"><img alt="pull" src="icons/download.svg"></a>
+          <a href="javascript:imageControl('pull', '{{tag}}')" title="Pull latest image"><img alt="pull" src="icons/download.svg"></a>
         </span>
       </summary>
       <p>
@@ -210,7 +225,7 @@ function viewImages(imageData) {
   `;
 
   let now = new Date();  // Used as a baseline to calculate image age.
-
+  let anyUnused = 0;
   imageData.forEach(image => {
     image.createDate = new Date(image.Created * 1000).toLocaleString();
     if (now - image.Created * 1000 < 30 * 86400000) {  // 86400000 is one day in milliseconds.
@@ -226,6 +241,7 @@ function viewImages(imageData) {
     }
     else {
       image.tag = '&lt;none&gt;';
+      anyUnused++;
     }
 
     image.size = Math.round(image.Size / 1048576);
@@ -237,6 +253,9 @@ function viewImages(imageData) {
     });
   });
 
+  if (anyUnused) {
+    html += '<p><a href="javascript:imageControl(\'prune\');" title="Delete Unused Images"><img alt="trash-can" src="icons/trash-can-outline.svg"></a><p>';
+  }
   document.getElementsByTagName('main')[0].innerHTML = html;
 }
 
