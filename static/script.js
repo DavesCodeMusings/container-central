@@ -95,53 +95,56 @@ function containerControl(action, containerId) {
  * @param {object} containerData, information returned from the API call.
  */
 function viewContainers(containerData) {
-  let content = '<h2>Containers</h2>';
+  let html = '<h2>Containers</h2>';
+  let template = `
+    <details>
+      <summary><img alt="{{State}}" src="icons/{{stateIcon}}"> {{name}}
+        <span class="controls">
+          <a href="javascript:containerControl('stop', '{{Id}}');" title="Stop container"><img alt="stop" src="icons/stop.svg"></a>
+          <a href="javascript:containerControl('start', '{{Id}}');" title="Start container"><img alt="start" src="icons/play.svg"></a>
+          <a href="javascript:containerControl('restart', '{{Id}}');" title="Restart container"><img alt="restart" src="icons/restart.svg"></a>
+        </span>
+      </summary>
+      <p>
+        {{Id}}<br>
+        {{imageTag}}<br>
+        {{createDate}}<br>
+        {{Status}}<br>
+      </p>
+    </details>
+  `;
 
   containerData.forEach(container => {
-    let stateIcon = '';
     switch (container.State) {
       case 'running':
-        stateIcon = 'play-circle-outline.svg';
+        container.stateIcon = 'play-circle-outline.svg';
         break;
       case 'exited':
-        stateIcon = 'stop-circle.svg';
+        container.stateIcon = 'stop-circle.svg';
         break;
       default:
-        stateIcon = 'question.svg';
+        container.stateIcon = 'question.svg';
     }
 
-    let imageTag = container.ImageID;  // Use the sha256 ImageID as the fallback name, but...
-    images.forEach(image => {          // Look for a match in the known images for a more friendly name.
+    container.name = container.Names[0].replace(/\//, '');
+
+    container.imageTag = container.ImageID;  // Use the sha256 ImageID as the fallback name, but...
+    images.forEach(image => {                // Look for a match in the known images for a more friendly name.
       if (image.Id == container.ImageID) {
-        imageTag = image.RepoTags[0];
+        container.imageTag = image.RepoTags[0];
       }
     });
 
-    let createDate = new Date(container.Created * 1000).toLocaleString();  // API uses unix epoch time.
+    container.createDate = new Date(container.Created * 1000).toLocaleString();  // API uses unix epoch time.
 
-    content += `<details>`;
-    content += `<summary>`;
-    content += `<img alt="${container.State}" src="icons/${stateIcon}"> ${container.Names[0].replace(/\//, '')}`;
-    content += `<span class="controls">`;
-    if (container.State == 'running') {
-      content += `<a href="javascript:containerControl('stop', '${container.Id}');" title="Stop container"><img alt="stop" src="icons/stop.svg"></a>`;
-      content += `<a href="javascript:containerControl('restart', '${container.Id}');" title="Restart container"><img alt="restart" src="icons/restart.svg"></a><br>`;
-    }
-    else {
-      content += `<a href="javascript:containerControl('start', '${container.Id}');" title="Start container"><img alt="start" src="icons/play.svg"></a><br>`;
-    }
-    content += `</span>`;
-    content += `</summary>`;
-    content += `<p>`;
-    content += `${container.Id}<br>`;
-    content += `${imageTag}<br>`;
-    content += `${createDate}<br>`;
-    content += `${container.Status}<br>`;
-    content += `</p>`;
-    content += `</details>`;
+    // Replace template entries like {{property}} with properties found in the container object.
+    html += template.replace(/{{\w+}}/g, (match) => {
+      let property = match.replace(/^{{/, '').replace(/}}$/, '');
+      return container[property];
+    });
   });
 
-  document.getElementsByTagName('main')[0].innerHTML = content;
+  document.getElementsByTagName('main')[0].innerHTML = html;
 }
 
 /**
@@ -149,40 +152,51 @@ function viewContainers(containerData) {
  * @param {object} imageData, information returned from the API call.
  */
 function viewImages(imageData) {
-  let content = '<h2>Images</h2>';
+  let html = '<h2>Images</h2>';
+  let template = `
+    <details>
+      <summary><img alt="freshness indicator" src={{ageIcon}}> {{tag}}
+        <span class="controls">
+          <a href="javascript:pullImage('{{tag}}')" title="Pull latest image"><img alt="pull" src="icons/download.svg"></a>
+        </span>
+      </summary>
+      <p>
+        {{Id}}<br>
+        {{createDate}}<br>
+        {{size}}M
+      </p>
+    </details>
+  `;
+
   let now = new Date();  // Used as a baseline to calculate image age.
 
   imageData.forEach(image => {
-    let createDate = new Date(image.Created * 1000).toLocaleString();
-    let ageIcon = 'icons/calendar-clock.svg';
+    image.createDate = new Date(image.Created * 1000).toLocaleString();
     if (now - image.Created * 1000 < 30 * 86400000) {  // 86400000 is one day in milliseconds.
-      ageIcon = 'icons/calendar-check.svg';
+      image.ageIcon = 'icons/calendar-check.svg';
+    }
+    else {
+      image.ageIcon = 'icons/calendar-clock.svg';
     }
 
-    let repoTag = '&lt;none&gt;';  // When an image is updated, but a container still runs an old image,
-    if (image.RepoTags) {          // it's possible to have a null tag.
-      repoTag = image.RepoTags[0].replace(/</g, '&lt;').replace(/>/g, '&gt');
+    // When an image is updated, but a container still runs an old image, it's possible to have a null tag.
+    if (image.RepoTags) {
+      image.tag = image.RepoTags[0].replace(/</g, '&lt;').replace(/>/g, '&gt');
     }
-    else if (image.RepoDigests) {
-      repoTag = image.RepoDigests[0].replace(/@sha256.*/, ':&lt;none&gt;');
+    else {
+      image.tag = '&lt;none&gt;';
     }
 
-    content += `<details>`;
-    content += `<summary>`;
-    content += `<img alt="freshness indicator" src=${ageIcon}> ${repoTag}`;
-    content += `<span class="controls">`;
-    content += `<a href="javascript:pullImage('${repoTag}')" title="Pull latest image"><img alt="pull" src="icons/download.svg"></a>`;
-    content += `</span>`;
-    content += `</summary>`;
-    content += `<p>`;
-    content += `${image.Id}<br>`;
-    content += `${createDate}<br>`;
-    content += `${Math.round(image.Size / 1048576)}M<br>`;
-    content += `</p>`;
-    content += `</details>`;
+    image.size = Math.round(image.Size / 1048576);
+
+    // Replace template entries like {{property}} with properties found in the image object.
+    html += template.replace(/{{\w+}}/g, (match) => {
+      let property = match.replace(/^{{/, '').replace(/}}$/, '');
+      return image[property];
+    });
   });
 
-  document.getElementsByTagName('main')[0].innerHTML = content;
+  document.getElementsByTagName('main')[0].innerHTML = html;
 }
 
 /**
@@ -190,27 +204,32 @@ function viewImages(imageData) {
  * @param {object} stackData, information returned from the API call.
  */
 function viewStacks(stackData) {
-  let content = '<h2>Stacks</h2>';
-  let yamlFiles = Object.keys(stackData);
+  let html = '<h2>Stacks</h2>';
+  let template = `
+    <details>
+      <summary><img alt="stack icon" src='icons/view-dashboard-outline.svg'> {{project}}
+        <span class="controls">
+          <a href="javascript:stackControl('up', '{{project}}');" title="Deploy Stack"><img alt="Up" src="icons/arrow-up-thick.svg"></a>
+          <a href="javascript:stackControl('down', '{{project}}');" title="Remove Stack"><img alt="Up" src="icons/arrow-down-thick.svg"></a>
+          <a href="javascript:stackControl('restart', '{{project}}');" title="Restart Stack"><img alt="Up" src="icons/arrow-u-up-right-bold.svg"></a>
+        </span>
+      </summary>
+      <textarea rows="{{lines}}" cols="60" readonly wrap="off">{{content}}</textarea>
+    </details>
+  `;
 
-  yamlFiles.forEach(composeFile => {
-    let stackName = composeFile.replace(/.yml/, '');
-    let linesInFile = stackData[composeFile].split('\n').length;
+  stackData.forEach(dockerCompose => {
+    dockerCompose.project = dockerCompose.filename.replace(/.yml/, '');
+    dockerCompose.lines = dockerCompose.content.split('\n').length;
 
-    content += `<details>`;
-    content += `<summary>`;
-    content += `<img alt="stack icon" src='icons/view-dashboard-outline.svg'> ${composeFile.replace(/.yaml$/, '').replace(/.yml$/, '')}`;
-    content += `<span class="controls">`;
-    content += `<a href="javascript:stackControl('up', '${stackName}');" title="Deploy Stack"><img alt="Up" src="icons/arrow-up-thick.svg"></a>`;
-    content += `<a href="javascript:stackControl('down', '${stackName}');" title="Remove Stack"><img alt="Up" src="icons/arrow-down-thick.svg"></a>`;
-    content += `<a href="javascript:stackControl('restart', '${stackName}');" title="Restart Stack"><img alt="Up" src="icons/arrow-u-up-right-bold.svg"></a><br>`;
-    content += `</span>`;
-    content += `</summary>`;
-    content += `<textarea rows="${linesInFile}" cols="60" readonly wrap="off">${stackData[composeFile]}</textarea><br>`;
-    content += `</details>`;
+    // Replace template entries like {{property}} with properties found in the dockerCompose object.
+    html += template.replace(/{{\w+}}/g, (match) => {
+      let property = match.replace(/^{{/, '').replace(/}}$/, '');
+      return dockerCompose[property];
+    });
   });
 
-  document.getElementsByTagName('main')[0].innerHTML = content;
+  document.getElementsByTagName('main')[0].innerHTML = html;
 }
 
 /**
@@ -218,16 +237,26 @@ function viewStacks(stackData) {
  * @param {object} volumeData, information returned from the API call.
  */
 function viewVolumes(volumeData) {
-  let content = '<h2>Volumes</h2>';
+  let html = '<h2>Volumes</h2>';
+  let template = `
+    <details>
+      <summary><img alt="generic stack icon" src='icons/database-outline.svg'> {{Name}}</summary>
+      <p>
+        {{Mountpoint}}<br>
+        {{timeStamp}}
+      </p>
+    </details>
+  `;
+
   volumeData.Volumes.forEach(volume => {
-    let timeStamp = new Date(volume.CreatedAt).toLocaleString();
-    content += `<details>`;
-    content += `<summary><img alt="stack icon" src='icons/database-outline.svg'> ${volume.Name}</summary>`;
-    content += `<p>`;
-    content += `${volume.Mountpoint}<br>`;
-    content += `${timeStamp}<br>`;
-    content += `</p>`;
-    content += `</details>`;
+    volume.timeStamp = new Date(volume.CreatedAt).toLocaleString();
+
+    // Replace template entries like {{property}} with properties found in the volume object.
+    html += template.replace(/{{\w+}}/g, (match) => {
+      let property = match.replace(/^{{/, '').replace(/}}$/, '');
+      return volume[property];
+    });
   })
-  document.getElementsByTagName('main')[0].innerHTML = content;
+
+  document.getElementsByTagName('main')[0].innerHTML = html;
 }

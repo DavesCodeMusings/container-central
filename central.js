@@ -82,12 +82,16 @@ app.get('/volumes', callAPI);
 
 app.get('/stacks', (req, res) => {
   let files = fs.readdirSync('compose');
-  let yaml = {};
+  let stackInfo = [];
   files.forEach(file => {
-    yaml[file] = fs.readFileSync(`compose/${file}`, { encoding: 'utf8' });
+    let info = {
+      filename: file,
+      content: fs.readFileSync(`compose/${file}`, { encoding: 'utf8' })
+    }
+    stackInfo.push(info);
   });
   res.setHeader("Content-Type", "application/json");
-  res.send(JSON.stringify(yaml, null, 2));
+  res.send(JSON.stringify(stackInfo, null, 2));
 });
 
 app.post('/containers/:containerId/:action', (req, res) => {

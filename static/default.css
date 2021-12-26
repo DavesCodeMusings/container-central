@@ -36,7 +36,10 @@ details > summary {
 
 .controls {
   display: none;
-  padding-left: 1em;
+}
+
+.controls a {
+  margin-left: 0.5em;
 }
 
 details[open] .controls {
