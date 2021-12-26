@@ -6,7 +6,7 @@ Container Central is a very stripped down web-based management tool for Docker c
 
 Right now it's capable of viewing information about existing containers, images, Docker Compose stacks and Docker volumes. It can also pull updated images from Docker Hub.
 
-To get an idea of the future direction, see [issues tagged with enhancement](https://github.com/DavesCodeMusings/container-central/issues?q=is%3Aissue+is%3Aopen+Enhancement).
+To get an idea of the future direction, see [issues tagged with enhancement](https://github.com/DavesCodeMusings/container-central/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement).
 
 ## Why?
 There are pleny of full-featured container management apps out there. Portainer is one of my favorites. But all the ones I've looked at have "enterprise features" in an attempt to get you to pay for a license rather than using the "community version".
@@ -14,7 +14,7 @@ There are pleny of full-featured container management apps out there. Portainer 
 I'm running a single Raspberry Pi in my home. I trust my users. I have no need for any enterprise features. I just want simple. Like most open source developers, I had an itch and I scratched it. This is the byproduct.
 
 ## How can I use it?
-There is a Docker image at: https://hub.docker.com/r/davescodemusings/container-central and instructions on how to deploy it. This is probably the easiest method.
+There is a [Docker image](https://hub.docker.com/r/davescodemusings/container-central) with instructions on how to deploy it. This is probably the easiest method.
 
 You can also install node.js on your Pi and run it that way. Start it up using the command `./central.js` to try it out, or use `start.sh` to run it long term as a background process.
 
