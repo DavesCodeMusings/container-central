@@ -4,15 +4,22 @@
  * An API to expose parts of the Docker API and also provide an interface
  * to docker-compose.yml files.
  */
-
-const dockerSocket = '/var/run/docker.sock';
-const dockerCompose = '/usr/local/bin/docker-compose';
-const listenPort = '8088';
-
 const { exec } = require('child_process');
 const express = require('express');  // npm install express for this one.
 const fs = require('fs');
 const http = require('http');
+
+const configFile = './config.json';
+var config = {};
+try {
+  config = JSON.parse(fs.readFileSync(configFile, 'utf-8'));
+}
+catch {
+  console.warn(`${configFile} not found. Using default values.`);
+}
+const dockerSocket = '/var/run/docker.sock';
+const dockerCompose = '/usr/local/bin/docker-compose';
+const listenPort = config.listenPort || '8088';
 
 /**
  * Callback function used for Docker API GET requests.
