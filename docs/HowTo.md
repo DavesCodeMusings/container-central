@@ -1,77 +1,53 @@
-# Running
-The easiest way to run Container Central is to use a container and a docker run command like this:
+# Using Container Central to Manage Your Containers
+This document gives a more in-depth look at how to use Container Central. To get up and running, see the [Quick Start guide](QuickStart.md)
 
-```
-docker run -d \
-  --name container-central \
-  -p 8088:8088 \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  davescodemusings/container-central:latest
-```
+## A Little Background
+Not too much, I promise. I just want to give you some insight into why I created Container Central so you will understand the typical use case I'm targeting.
 
-# Using
-Point your browser to your Pi, like this: http://mypi.home:8088 (or use the IP address.) You'll see a simple menu like this:
+I have a Raspberry Pi 4 running about a dozen Docker Containers. It's fucntioning as our home's NAS, Home Automation, etc. server. It does a lot using minimal hardware.
 
-![menu](screenshots/menu.png)
+Running Docker containers using command-line tools is not my idea of a good time. But, a typical container management solution has more features than I really need. All I want to do is deploy using Docker Compose YAML and then be able to stop and start, upgrade images, prune unused stuff, etc. And I want to do this without typing.
 
-Things will look slightly different on mobile phones and other small screen devices, but the basic menu items are the same.
+I also want mobile friendly... and dark mode.
 
-* Containers
-* Images
-* Stacks
-* Volumes
+## A Typical Use Case
+Here's the way I use Container Central to start a container.
+1. Create a Docker Compose YAML for whatever I want to deploy.
+2. Copy the YAML into Container Central's compose directory. (Git integration is in development to get rid of this step.)
+3. Navigate to Container Central's Stacks menu.
+4. Find the stack and click the up arrow.
 
-## Containers
-Click or tap on containers. You will see a list of Docker containers running on the host.
+Container Central comes with a sample compose file called nginx-test so you can try this at home.
 
-![container view](screenshots/containers.png)
+Now that the container is up and running, I can start and stop it using the Containers menu.
 
-The state of each container is shown by the round icon before the container's name. A triangle indicates it's running. A square indicates it is stopped. In the screenshot above, all containers are running except for esphome.
+Let's say a new Nginx image is deployed. I can go to the Images menu and use the download icon to pull the latest image from Docker Hub. I can then go back to the Stacks menu and click the up arrow again to redeploy. Docker Compose does all the work of getting the container running with the latest image.
 
-Clicking or tapping on the container name will open up details about the containers. You're also presented with controls to stop, start, or restart the container, depending on its present state. The mosquitto container shows an example of this.
+That's really all I need to do to deploy containers and keep them up to date.
 
-(On desktop systems, you can hover your mouse over a container name to reveal these controls.)
+## Container Housekeeping
+Occasionally, I will try out new containers, decide I don't like them, and then remove them. I can click the Container's menu and stop whatever I'm not using.
 
-Starting or stopping can take a moment, so be patient. You'll get a pop-up box with the status once the operation is complete.
+And, whenever one or more containers is in a stopped state, a little trash can icon appears at the bottom of the list. Clicking the trash can icon is like typing `docker container prune`, except I don't have to type it, I just click.
 
-You can only control existing containers. You cannot run a new container from the containers view. See Stacks for how to run new containers.
+If nothing is in a stopped state, the trash can icon goes away.
 
-## Images
-Select images and you will see all of the container images, similar to using the command `docker image ls`.
+## Image Housekeeping
+After updating some of my containers and redeploying with the latest, there will be images hanging around with the tag of `<none>:<none>`, meaning they're no longer used. Whenever there are `<none>:<none>` images, the trash can will appear at the bottom of the list. All I have to do is click.
 
-![image view](screenshots/images.png)
+## Using Together With Other Tools
+Container Central can be used alongside other tools. I can type `docker stop nginx-test` if I am so inclined. In fact, any Docker or Docker Compose commands will work. The only place to watch out is with Docker Compose.
 
-You can get a quick estimation of a container's age by looking at the calendar icon in front of its name. If the calendar has a check mark in it, the image is less than 30 days old. If the calendar has a clock in it, the image is older than 30 days.
+The typical Docker Compose scenario is to create a directory with a project name, like `mkdir nginx-test`. The cd into nginx-test and create a file called docker-compose.yml. But I like to do it differently.
 
-If you expand the details of the container you'll be presented with more information and a download option to pull a more recent version. (The download option also appears if you hover the mouse pointer.)
+I put all my .yml files in one directory and name them something more descriptive than docker-compose.yml. For example, nginx-test.yml. For me, I think it's easier to manage. I'm certainly typing `cd nginx-test` a lot less.
 
-Image downloads can take a bit of time. A pop-up will appear when it's done.
+When all the files are in a common directory, docker compose needs a couple extra command-line options beyond the usual -d.
 
-## Stacks
-Select the stacks menu choice and you will see a list of Docker Compose projects.
+1. -f to specify the file, as in `-f nginx-test.yml`
+2. -p to specify the project name, as in `-p nginx-test`
 
-![stacks view](screenshots/stacks.png)
+By now, you might be thinking these extra command-line options take more effort than a simple `cd nginx-test` every now and again. But, that's why I like to point and click instead of typing.
 
-What you see here are any Docker Compose YAML files that happen to be saved in the container-central/compose directory. By default, Container Central includes a simple Nginx project in the file nginx.yml. The screenshot above shows several projects, with Nginx open to show details and the controls.
-
-Clicking the up arrow will deploy the stack, just like typing the command `docker-compose -f nginx.yml -p nginx up -d` The down arrow is the same as `docker-compose down` and the U-turn arrow will let you do a restart.
-
-You can create your own Docker Compose YAML and save it in the container-central/compose directory. Name the file with the stack name. For example, file-sharing.yml in container-central/compose that appears here as _file-sharing_.
-
-## Volumes
-Select volumes to view Docker Volume information as if you had typed `docker volume ls` from the command-line. It's not very exciting, so there's no screenshot.
-
-# Making Container Central Work for You
-Container Central designed to work with Docker command-line tools, not replace them. You will occasionally need to visit the shell prompt for some tasks. But here's what you can do:
-
-1. Create a Docker Compose YAML file for your project and save it in container-central/compose.
-2. Open up Container Central and click the Stacks menu.
-3. Find the Docker Compose project in the list and deploy the stack.
-
-You can still manage the stack and individual components from command-line if you want to, but you don't have to. Here's another example.
-
-1. You select Container Central's Images view and see that one of your containers is getting old.
-2. Use the download control to pull a new image.
-3. Visit the Stacks menu and use the up arrow to re-deploy the stack.
-
-Behind the scenes, docker-compose takes care of determining which containers have new images available and will redeploy them as needed.
+## Other Perks
+You may have noticed that the icons in front of container names change depending on the container's state. The image icons change as well. If an image is less than 30 days old, the icon is a calendar with a check mark. If it's older than 30 days, you'll see a calendar with a clock. I use this as a quick visual reminder to keep my containers up to date with the latest images.
