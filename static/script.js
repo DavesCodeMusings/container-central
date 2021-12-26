@@ -71,19 +71,19 @@ function viewInfo(info) {
     <p>
       <img alt="Host" src="icons/memory.svg"> {{NCPU}} CPU / {{ram}}G<br>
       <span style="margin-right: 1em;">
-        <a href="javascript:apiGet('/containers', viewContainers)" style="text-decoration: none;">
+        <a href="javascript:apiGet('/containers', viewContainers)" style="text-decoration: none;" title="Containers">
           <img alt="Running:" src="icons/play.svg"> {{ContainersRunning}}/{{Containers}}
           <img alt="Paused:" src="icons/pause.svg"> {{ContainersPaused}}
           <img alt="Stopped:" src="icons/stop.svg"> {{ContainersStopped}}
         </a>
       </span>
       <span style="margin-right: 1em;">
-        <a href="javascript:apiGet('/images', viewImages)" style="text-decoration: none;">
+        <a href="javascript:apiGet('/images', viewImages)" style="text-decoration: none;" title="Images">
           <img alt="Images:" src="icons/file-outline.svg"> {{Images}}
         </a>
       </span>
       <span style="margin-right: 1em;">
-        <a href="javascript:apiGet('/stacks', viewStacks)" style="text-decoration: none;">
+        <a href="javascript:apiGet('/stacks', viewStacks)" style="text-decoration: none;" title="Stacks">
           <img alt="Images:" src="icons/view-dashboard-outline.svg"> {{stacks}}
         </a>
       </span>
