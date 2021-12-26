@@ -97,6 +97,10 @@ nav .label {
   nav img {
     margin-right: 0.5em;
   }
+
+  main {
+    min-width: 640px;  /* Makes float:right look better */
+  }
 }
 
 /* Everybody loves dark mode these days. */

@@ -146,7 +146,7 @@ function imageControl(action, imageTag) {
  * @param {object} containerData, information returned from the API call.
  */
 function viewContainers(containerData) {
-  let html = '<h2>Containers</h2>';
+  let html = `<h2>Containers <img alt="refresh" src="icons/refresh.svg" onclick="apiGet('/containers', viewContainers);" style="cursor: pointer; float: right;"></h2>`;
   let template = `
     <details>
       <summary><img alt="{{State}}" src="icons/{{stateIcon}}"> {{name}}
@@ -208,7 +208,7 @@ function viewContainers(containerData) {
  * @param {object} imageData, information returned from the API call.
  */
 function viewImages(imageData) {
-  let html = '<h2>Images</h2>';
+  let html = `<h2>Images <img alt="refresh" src="icons/refresh.svg" onclick="apiGet('/images', viewImages);" style="cursor: pointer; float: right;"></h2>`;
   let template = `
     <details>
       <summary><img alt="freshness indicator" src={{ageIcon}}> {{tag}}
@@ -264,7 +264,7 @@ function viewImages(imageData) {
  * @param {object} stackData, information returned from the API call.
  */
 function viewStacks(stackData) {
-  let html = '<h2>Stacks</h2>';
+  let html = `<h2>Stacks <img alt="refresh" src="icons/refresh.svg" onclick="apiGet('/stacks', viewStacks);" style="cursor: pointer; float: right;"></h2>`;
   let template = `
     <details>
       <summary><img alt="stack icon" src='icons/view-dashboard-outline.svg'> {{project}}
@@ -297,7 +297,7 @@ function viewStacks(stackData) {
  * @param {object} volumeData, information returned from the API call.
  */
 function viewVolumes(volumeData) {
-  let html = '<h2>Volumes</h2>';
+  let html = `<h2>Volumes<img alt="refresh" src="icons/refresh.svg" onclick="apiGet('/images', viewVolumes);" style="cursor: pointer; float: right;"></h2>`;
   let template = `
     <details>
       <summary><img alt="generic stack icon" src='icons/database-outline.svg'> {{Name}}</summary>
