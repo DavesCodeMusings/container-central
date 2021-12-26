@@ -32,7 +32,7 @@ function apiGet(path, callback) {
  * @param {string} path, as in the path part of http://host:port/path, including the /
  * @param {function} callback
  */
- function apiPost(path, callback) {
+function apiPost(path, callback) {
   let url = window.location.origin + path;
   document.body.style.cursor = 'wait';
   let xhttp = new XMLHttpRequest();
@@ -61,6 +61,47 @@ function cacheImages(imageApiResult) {
 }
 
 /**
+ * Callback function to format the data from the /info API call for viewing.
+ * @param {object} info, data about the Docker host returned from the API call.
+ */
+function viewInfo(info) {
+  let html = '';
+  let template = `
+    <h2>{{Name}}</h2>
+    <p>
+      <img alt="Host" src="icons/memory.svg"> {{NCPU}} CPU / {{ram}}G<br>
+      <span style="margin-right: 1em;">
+        <a href="javascript:apiGet('/containers', viewContainers)" style="text-decoration: none;">
+          <img alt="Running:" src="icons/play.svg"> {{ContainersRunning}}/{{Containers}}
+          <img alt="Paused:" src="icons/pause.svg"> {{ContainersPaused}}
+          <img alt="Stopped:" src="icons/stop.svg"> {{ContainersStopped}}
+        </a>
+      </span>
+      <span style="margin-right: 1em;">
+        <a href="javascript:apiGet('/images', viewImages)" style="text-decoration: none;">
+          <img alt="Images:" src="icons/file-outline.svg"> {{Images}}
+        </a>
+      </span>
+      <span style="margin-right: 1em;">
+        <a href="javascript:apiGet('/stacks', viewStacks)" style="text-decoration: none;">
+          <img alt="Images:" src="icons/view-dashboard-outline.svg"> {{stacks}}
+        </a>
+      </span>
+    </p>
+  `;
+
+  info.ram = (info.MemTotal / 1024 / 1024 / 1024).toFixed(2);
+
+  // Replace template entries like {{property}} with properties found in the info object.
+  html += template.replace(/{{\w+}}/g, (match) => {
+    let property = match.replace(/^{{/, '').replace(/}}$/, '');
+    return info[property];
+  });
+
+  document.getElementsByTagName('main')[0].innerHTML = html;
+}
+
+/**
  * A wrapper for the /containers start, stop API calls.
  * @param {string} action, one of: start, stop, restart.
  * @param {string} containerId, the uuid of the container.
@@ -75,7 +116,7 @@ function containerControl(action, containerId) {
  * @param {string} action, one of: start, stop, restart.
  * @param {string} containerId, the uuid of the container.
  */
- function stackControl(action, stackName) {
+function stackControl(action, stackName) {
   console.log(`docker-compose ${stackName} ${action}`);
   apiPost(`/stacks/${stackName}/${action}`, alert);  // Pop up results when done.
 }
@@ -84,7 +125,7 @@ function containerControl(action, containerId) {
  * A wrapper for the /pull API call that URI encodes the image tag.
  * @param {string} imageTag, in the format name:tag. (e.g. debian:lite)
  */
- function pullImage(imageTag) {
+function pullImage(imageTag) {
   let encodedImageTag = encodeURIComponent(imageTag);
   console.log(`Pulling ${imageTag}`);
   apiPost(`/pull/${encodedImageTag}`, alert);  // Pop up results when done.
