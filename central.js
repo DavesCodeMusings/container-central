@@ -47,11 +47,11 @@ function callAPI(req, res) {
   let data = '';
 
   const apiReq = http.request(apiOptions, (apiRes) => {
-    console.log(`${apiRes.statusCode} - ${apiOptions.path}`);
     apiRes.on('data', d => {
       data += d.toString();
     });
     apiRes.on('end', () => {
+      console.log(`${apiRes.statusCode} - ${apiOptions.path}`);
       res.setHeader("Content-Type", "application/json");
       res.send(data);
     });
@@ -182,7 +182,6 @@ app.post('/:target/prune', (req, res) => {
     };
 
     if (target == 'containers' || target == 'images' || target == 'volumes') {
-      console.log(`Pruning ${target}`);
       let data = '';
 
       const apiReq = http.request(apiOptions, (apiRes) => {
@@ -191,7 +190,6 @@ app.post('/:target/prune', (req, res) => {
         });
         apiRes.on('end', () => {
           console.log(`${apiRes.statusCode} - ${apiOptions.path}`);
-          console.log(data);
           res.status(apiRes.statusCode);
           res.send('"success"');  // JSON is expected by the client, so extra quoting is required.
         });
@@ -220,17 +218,19 @@ app.post('/pull/:imageTag', (req, res) => {
 
   let data = '';
   const apiReq = http.request(apiOptions, (apiRes) => {
-    console.log(`${apiRes.statusCode} - ${apiOptions.path}`);
     apiRes.on('data', d => {
       data += d.toString();
     });
     apiRes.on('end', () => {
+      console.log(`${apiRes.statusCode} - ${apiOptions.path}`);
+      res.status(apiRes.statusCode);
       res.setHeader("Content-Type", "application/json");
       res.send(JSON.stringify(data, null, 2));
     });
   });
   apiReq.on('error', err => {
     console.error(err)
+    res.status(apiRes.statusCode);
   });
   apiReq.end();
 });
