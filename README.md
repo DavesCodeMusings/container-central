@@ -6,9 +6,7 @@ Container Central is a very stripped down web-based management tool for Docker c
 
 Right now it's capable of viewing information about existing containers, images, Docker Compose stacks and Docker volumes. It can also pull updated images from Docker Hub.
 
-In the future, I plan to add:
-* User interface improvements like automatic refresh.
-* Documentation and examples for reverse proxy SSL.
+To get an idea of the future direction, see [issues tagged with enhancement](https://github.com/DavesCodeMusings/container-central/issues?q=is%3Aissue+is%3Aopen+Enhancement).
 
 ## Why?
 There are pleny of full-featured container management apps out there. Portainer is one of my favorites. But all the ones I've looked at have "enterprise features" in an attempt to get you to pay for a license rather than using the "community version".
