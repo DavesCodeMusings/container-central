@@ -200,6 +200,7 @@ function viewContainers(containerData) {
   if (anyStopped) {
     html += `<p><img alt="trash-can" class="control-aside" onclick="containerControl('prune');" src="icons/trash-can-outline.svg"><p>`;
   }
+
   document.getElementsByTagName('main')[0].innerHTML = html;
 }
 
@@ -254,8 +255,9 @@ function viewImages(imageData) {
   });
 
   if (anyUnused) {
-    html += `<p><a href="javascript:imageControl('prune');" title="Delete Unused Images"><img alt="trash-can" src="icons/trash-can-outline.svg"></a><p>`;
+    html += `<p><img alt="trash-can" class="control-aside" onclick="imageControl('prune');" src="icons/trash-can-outline.svg"><p>`;
   }
+
   document.getElementsByTagName('main')[0].innerHTML = html;
 }
 
@@ -300,6 +302,7 @@ function viewStacks(stackData) {
   }
 
   html += `<p><img alt="pull" class="control-aside" onclick="alert('Not implemented');" src="icons/source-branch.svg"><p>`;
+  
   document.getElementsByTagName('main')[0].innerHTML = html;
 }
 
