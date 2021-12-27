@@ -71,19 +71,19 @@ function viewInfo(info) {
     <p>
       <img alt="Host" src="icons/memory.svg"> {{NCPU}} CPU / {{ram}}G<br>
       <span style="margin-right: 1em;">
-        <a href="javascript:apiGet('/containers', viewContainers)" style="text-decoration: none;" title="Containers">
+        <a href="javascript:apiGet('/containers', viewContainers)" title="Containers">
           <img alt="Running:" src="icons/play.svg"> {{ContainersRunning}}/{{Containers}}
           <img alt="Paused:" src="icons/pause.svg"> {{ContainersPaused}}
           <img alt="Stopped:" src="icons/stop.svg"> {{ContainersStopped}}
         </a>
       </span>
       <span style="margin-right: 1em;">
-        <a href="javascript:apiGet('/images', viewImages)" style="text-decoration: none;" title="Images">
+        <a href="javascript:apiGet('/images', viewImages)" title="Images">
           <img alt="Images:" src="icons/file-outline.svg"> {{Images}}
         </a>
       </span>
       <span style="margin-right: 1em;">
-        <a href="javascript:apiGet('/stacks', viewStacks)" style="text-decoration: none;" title="Stacks">
+        <a href="javascript:apiGet('/stacks', viewStacks)" title="Stacks">
           <img alt="Images:" src="icons/view-dashboard-outline.svg"> {{stacks}}
         </a>
       </span>
@@ -136,7 +136,7 @@ function imageControl(action, imageTag) {
  * @param {string} action, one of: start, stop, restart.
  * @param {string} containerId, the uuid of the container.
  */
- function stackControl(action, stackName) {
+function stackControl(action, stackName) {
   console.log(`docker-compose ${stackName} ${action}`);
   apiPost(`/stacks/${stackName}/${action}`, alert);  // Pop up results when done.
 }
@@ -146,7 +146,7 @@ function imageControl(action, imageTag) {
  * @param {object} containerData, information returned from the API call.
  */
 function viewContainers(containerData) {
-  let html = `<h2>Containers <img alt="refresh" src="icons/refresh.svg" onclick="apiGet('/containers', viewContainers);" style="cursor: pointer; float: right;"></h2>`;
+  let html = `<h2>Containers <img alt="refresh" class="control-aside" src="icons/refresh.svg" onclick="apiGet('/containers', viewContainers);"></h2>`;
   let template = `
     <details>
       <summary><img alt="{{State}}" src="icons/{{stateIcon}}"> {{name}}
@@ -198,7 +198,7 @@ function viewContainers(containerData) {
   });
 
   if (anyStopped) {
-    html += '<p><a href="javascript:containerControl(\'prune\');" title="Delete Stopped Containers"><img alt="trash-can" src="icons/trash-can-outline.svg"></a><p>';
+    html += `<p><img alt="trash-can" class="control-aside" onclick="containerControl('prune');" src="icons/trash-can-outline.svg"><p>`;
   }
   document.getElementsByTagName('main')[0].innerHTML = html;
 }
@@ -208,7 +208,7 @@ function viewContainers(containerData) {
  * @param {object} imageData, information returned from the API call.
  */
 function viewImages(imageData) {
-  let html = `<h2>Images <img alt="refresh" src="icons/refresh.svg" onclick="apiGet('/images', viewImages);" style="cursor: pointer; float: right;"></h2>`;
+  let html = `<h2>Images <img alt="refresh" class="control-aside" src="icons/refresh.svg" onclick="apiGet('/images', viewImages);"></h2>`;
   let template = `
     <details>
       <summary><img alt="freshness indicator" src={{ageIcon}}> {{tag}}
@@ -254,7 +254,7 @@ function viewImages(imageData) {
   });
 
   if (anyUnused) {
-    html += '<p><a href="javascript:imageControl(\'prune\');" title="Delete Unused Images"><img alt="trash-can" src="icons/trash-can-outline.svg"></a><p>';
+    html += `<p><a href="javascript:imageControl('prune');" title="Delete Unused Images"><img alt="trash-can" src="icons/trash-can-outline.svg"></a><p>`;
   }
   document.getElementsByTagName('main')[0].innerHTML = html;
 }
@@ -264,8 +264,17 @@ function viewImages(imageData) {
  * @param {object} stackData, information returned from the API call.
  */
 function viewStacks(stackData) {
-  let html = `<h2>Stacks <img alt="refresh" src="icons/refresh.svg" onclick="apiGet('/stacks', viewStacks);" style="cursor: pointer; float: right;"></h2>`;
-  let template = `
+  let html = `<h2>Stacks <img alt="refresh" class="control-aside" src="icons/refresh.svg" onclick="apiGet('/stacks', viewStacks);"></h2>`;
+
+  if (stackData.length == 0) {
+    html += `
+      <p>Check out the
+        <a href="https://github.com/DavesCodeMusings/container-central/blob/main/docs/Git-Integration.md">Git Integration</a>
+        doc for configuration help.</p>
+    `;
+  }
+  else {
+    let template = `
     <details>
       <summary><img alt="stack icon" src='icons/view-dashboard-outline.svg'> {{project}}
         <span class="controls">
@@ -278,17 +287,19 @@ function viewStacks(stackData) {
     </details>
   `;
 
-  stackData.forEach(dockerCompose => {
-    dockerCompose.project = dockerCompose.filename.replace(/.yml/, '');
-    dockerCompose.lines = dockerCompose.content.split('\n').length;
+    stackData.forEach(dockerCompose => {
+      dockerCompose.project = dockerCompose.filename.replace(/.yml/, '');
+      dockerCompose.lines = dockerCompose.content.split('\n').length;
 
-    // Replace template entries like {{property}} with properties found in the dockerCompose object.
-    html += template.replace(/{{\w+}}/g, (match) => {
-      let property = match.replace(/^{{/, '').replace(/}}$/, '');
-      return dockerCompose[property];
+      // Replace template entries like {{property}} with properties found in the dockerCompose object.
+      html += template.replace(/{{\w+}}/g, (match) => {
+        let property = match.replace(/^{{/, '').replace(/}}$/, '');
+        return dockerCompose[property];
+      });
     });
-  });
+  }
 
+  html += `<p><img alt="pull" class="control-aside" onclick="alert('Not implemented');" src="icons/source-branch.svg"><p>`;
   document.getElementsByTagName('main')[0].innerHTML = html;
 }
 
@@ -297,7 +308,7 @@ function viewStacks(stackData) {
  * @param {object} volumeData, information returned from the API call.
  */
 function viewVolumes(volumeData) {
-  let html = `<h2>Volumes<img alt="refresh" src="icons/refresh.svg" onclick="apiGet('/images', viewVolumes);" style="cursor: pointer; float: right;"></h2>`;
+  let html = `<h2>Volumes<img alt="refresh" class="control-aside" src="icons/refresh.svg" onclick="apiGet('/images', viewVolumes);"></h2>`;
   let template = `
     <details>
       <summary><img alt="generic stack icon" src='icons/database-outline.svg'> {{Name}}</summary>

@@ -3,11 +3,15 @@
 }
 
 a {
-  color: black;
+  color: dodgerblue;
   text-decoration: none;
 }
 
-a:hover {
+nav a {
+  color: black;
+}
+
+nav a:hover {
   text-decoration: underline;
 }
 
@@ -47,6 +51,11 @@ details[open] .controls {
   display: inline;
 }
 
+.control-aside {
+  cursor: pointer;
+  float: right;
+}
+
 summary:hover > .controls {
   display: inline;
 }
@@ -60,7 +69,7 @@ img {
   font-weight: bold;
 }
 
-/* Colapse meu labels in mobile portrait mode. */
+/* Colapse menu labels in mobile portrait mode. */
 nav .label {
   display: none;
 }
@@ -106,7 +115,7 @@ nav .label {
 
 /* Everybody loves dark mode these days. */
 @media (prefers-color-scheme: dark) {
-  a {
+  nav a {
     color: white;
   }
 
