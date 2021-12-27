@@ -1,7 +1,7 @@
 # Container Central Quick Start
 
 ## Running
-The easiest way to run Container Central is to use a container and a docker run command like this:
+On Raspberry Pi, the easiest way to run Container Central is to use a docker run command like this:
 
 ```
 docker run -d \
