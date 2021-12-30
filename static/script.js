@@ -246,11 +246,12 @@ async function viewImages(tagOfInterest) {
         }
 
         // When an image is updated, but a container still runs an old image, it's possible to have a null tag.
+        // In this case, use the image id as the unique identifier. 
         if (image.RepoTags) {
           image.tag = image.RepoTags[0].replace(/</g, '&lt;').replace(/>/g, '&gt');
         }
         else {
-          image.tag = '&lt;none&gt;';
+          image.tag = image.Id;
           anyUnused++;
         }
 
