@@ -54,7 +54,7 @@ async function viewInfo() {
       </span>
       <span style="margin-right: 1em;">
         <a href="javascript:viewStacks()" title="Stacks">
-          <img alt="Images:" src="icons/view-dashboard-outline.svg"> {{stacks}}
+          <img alt="Stacks:" src="icons/format-list-bulleted-type.svg"> {{stacks}}
         </a>
       </span>
     </p>
@@ -277,7 +277,7 @@ async function viewStacks() {
   let html = `<h2>Stacks <img alt="refresh" class="control-aside" src="icons/refresh.svg" onclick="viewStacks();"></h2>`;
   let template = `
     <details>
-      <summary><img alt="stack icon" src='icons/view-dashboard-outline.svg'> {{project}}
+      <summary><img alt="stack icon" src='icons/format-list-bulleted-type.svg'> {{project}}
         <span class="controls">
           <a href="javascript:stackControl('up', '{{project}}');" title="Deploy Stack"><img alt="Up" src="icons/arrow-up-thick.svg"></a>
           <a href="javascript:stackControl('down', '{{project}}');" title="Remove Stack"><img alt="Up" src="icons/arrow-down-thick.svg"></a>
