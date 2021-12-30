@@ -121,9 +121,9 @@ async function viewContainers() {
       </summary>
       <p>
         {{Id}}<br>
-        {{imageTag}}<br>
+        <a href="javascript:viewImages();">{{imageTag}}</a><br>
         {{createDate}}<br>
-        {{Status}}<br>
+        {{Status}} <a href="javascript:viewStacks();"><i>{{stackName}}</i></a><br>
       </p>
     </details>
   `;
@@ -167,6 +167,13 @@ async function viewContainers() {
         }
 
         container.name = container.Names[0].replace(/\//, '');  // Names come with a leading /, but it looks better without.
+
+        if (container.Labels && container.Labels['com.docker.compose.project']) {
+          container.stackName = container.Labels['com.docker.compose.project'];
+        }
+        else {
+          container.stackName = '';
+        }
 
         container.imageTag = container.ImageID;  // Use the sha256 ImageID as the fallback name, but...
         imageData.forEach(image => {             // Look for a match in the known images for a more friendly name.
