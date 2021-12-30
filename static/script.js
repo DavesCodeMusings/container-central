@@ -1,37 +1,4 @@
 /**
- * Make an async POST request to the API and pass the parsed JSON to the callback.
- * @param {string} path, as in the path part of http://host:port/path, including the /
- * @param {function} callback
- */
-function apiPost(path, callback) {
-  let url = window.location.origin + path;
-  document.body.style.cursor = 'wait';
-  let xhttp = new XMLHttpRequest();
-  xhttp.onreadystatechange = function () {
-    if (this.readyState === 4) {
-      if (this.status === 200) {
-        callback(JSON.parse(this.responseText));
-      }
-      else {
-        alert(`Error communicating with server.\n${this.responseText}`);
-      }
-      document.body.style.cursor = 'default';
-    }
-  };
-  xhttp.open('POST', url, true);
-  xhttp.send();
-}
-
-/**
- * Callback function to create a copy of the /images API call results.
- * This is needed to match containers to image names rather than sha256 tags.
- * @param {object} imageApiResult, the data received from the API call.
- */
-function cacheImages(imageApiResult) {
-  images = imageApiResult;
-}
-
-/**
  * Retrieve data from the /containers API call and format as HTML for viewing. 
  */
 async function viewInfo() {
@@ -80,16 +47,22 @@ async function viewInfo() {
 
 /**
  * A wrapper for the /containers start, stop API calls.
- * @param {string} action, one of: start, stop, restart.
+ * @param {string} action, one of: start, stop, restart, prune.
  * @param {string} containerId, the uuid of the container.
  */
-function containerControl(action, containerId) {
+async function containerControl(action, containerId) {
   if (containerId) {
     console.log(`Telling conntainer ${containerId} to ${action}`);
-    apiPost(`/containers/${containerId}/${action}`, alert);  // Pop up results when done.
+    let response = await fetch(`/containers/${containerId}/${action}`, { method: 'POST'});
+    if (response.status == 200) {
+      alert(`Successful container ${action}.`);
+    }
   }
   else {
-    apiPost(`/containers/${action}`, alert);
+    let response = await fetch(`/containers/${action}`, { method: 'POST'});
+    if (response.status == 200) {
+      alert(`Successful container ${action}.`);
+    }
   }
 }
 
@@ -98,13 +71,19 @@ function containerControl(action, containerId) {
  * @param {string} action, one of: pull, prune.
  * @param {string} imageTag, in the format name:tag. (e.g. debian:lite)
  */
-function imageControl(action, imageTag) {
+async function imageControl(action, imageTag) {
   if (action == 'pull') {
     let encodedImageTag = encodeURIComponent(imageTag);
-    apiPost(`/pull/${encodedImageTag}`, alert);  // Pop up results when done.
+    let response = await fetch(`/pull/${encodedImageTag}`, { method: 'POST'});
+    if (response.status == 200) {
+      alert(`Successful image ${action}.`);
+    }
   }
   if (action == 'prune') {
-    apiPost('/images/prune', alert);
+    let response = await fetch('/images/prune', { method: 'POST'});
+    if (response.status == 200) {
+      alert(`Successful image ${action}.`);
+    }
   }
 }
 
@@ -113,9 +92,12 @@ function imageControl(action, imageTag) {
  * @param {string} action, one of: start, stop, restart.
  * @param {string} containerId, the uuid of the container.
  */
-function stackControl(action, stackName) {
+async function stackControl(action, stackName) {
   console.log(`docker-compose ${stackName} ${action}`);
-  apiPost(`/stacks/${stackName}/${action}`, alert);  // Pop up results when done.
+  let response = await fetch(`/stacks/${stackName}/${action}`, { method: 'POST'});
+  if (response.status == 200) {
+    alert(`Successful stack ${action}.`);
+  }
 }
 
 /**
