@@ -1,33 +1,4 @@
 /**
- * @global {object} images, a cached copy of the initial API call to /images.
- */
-var images = {};
-
-/**
- * Make an async GET request to the API and pass the parsed JSON to the callback.
- * @param {string} path, as in the path part of http://host:port/path, including the /
- * @param {function} callback
- */
-function apiGet(path, callback) {
-  let url = window.location.origin + path;
-  document.body.style.cursor = 'wait';
-  let xhttp = new XMLHttpRequest();
-  xhttp.onreadystatechange = function () {
-    if (this.readyState === 4) {
-      if (this.status === 200) {
-        callback(JSON.parse(this.responseText));
-      }
-      else {
-        alert(`Error communicating with server.\n${this.responseText}`);
-      }
-      document.body.style.cursor = 'default';
-    }
-  };
-  xhttp.open('GET', url, true);
-  xhttp.send();
-}
-
-/**
  * Make an async POST request to the API and pass the parsed JSON to the callback.
  * @param {string} path, as in the path part of http://host:port/path, including the /
  * @param {function} callback
@@ -61,44 +32,50 @@ function cacheImages(imageApiResult) {
 }
 
 /**
- * Callback function to format the data from the /info API call for viewing.
- * @param {object} info, data about the Docker host returned from the API call.
+ * Retrieve data from the /containers API call and format as HTML for viewing. 
  */
-function viewInfo(info) {
+async function viewInfo() {
   let html = '';
   let template = `
     <h2>{{Name}}</h2>
     <p>
       <img alt="Host" src="icons/memory.svg"> {{NCPU}} CPU / {{ram}}G<br>
       <span style="margin-right: 1em;">
-        <a href="javascript:apiGet('/containers', viewContainers)" title="Containers">
+        <a href="javascript:viewContainers()" title="Containers">
           <img alt="Running:" src="icons/play.svg"> {{ContainersRunning}}/{{Containers}}
           <img alt="Paused:" src="icons/pause.svg"> {{ContainersPaused}}
           <img alt="Stopped:" src="icons/stop.svg"> {{ContainersStopped}}
         </a>
       </span>
       <span style="margin-right: 1em;">
-        <a href="javascript:apiGet('/images', viewImages)" title="Images">
+        <a href="javascript:viewImages()" title="Images">
           <img alt="Images:" src="icons/file-outline.svg"> {{Images}}
         </a>
       </span>
       <span style="margin-right: 1em;">
-        <a href="javascript:apiGet('/stacks', viewStacks)" title="Stacks">
+        <a href="javascript:viewStacks()" title="Stacks">
           <img alt="Images:" src="icons/view-dashboard-outline.svg"> {{stacks}}
         </a>
       </span>
     </p>
   `;
 
-  info.ram = (info.MemTotal / 1024 / 1024 / 1024).toFixed(2);  // measuring in Gig seems a safe bet
+  console.log(`Fetching info from ${window.location.origin}/info`);
+  let infoResponse = await fetch(window.location.origin + '/info');
+  if (infoResponse.status != 200) {
+    console.log(`${infoResponse.status} received while fetching ${window.location.origin}/info`);
+  }
+  else {
+    let info = JSON.parse(await infoResponse.text());
+    info.ram = (info.MemTotal / 1024 / 1024 / 1024).toFixed(2);  // measuring in Gig seems a safe bet
 
-  // Replace template entries like {{property}} with properties found in the info object.
-  html += template.replace(/{{\w+}}/g, (match) => {
-    let property = match.replace(/^{{/, '').replace(/}}$/, '');
-    return info[property];
-  });
+    html += template.replace(/{{\w+}}/g, (match) => {
+      let property = match.replace(/^{{/, '').replace(/}}$/, '');
+      return info[property];
+    });
 
-  document.getElementsByTagName('main')[0].innerHTML = html;
+    document.getElementsByTagName('main')[0].innerHTML = html;
+  }
 }
 
 /**
@@ -142,11 +119,10 @@ function stackControl(action, stackName) {
 }
 
 /**
- * Callback to format the data from the /containers API call as HTML for viewing. 
- * @param {object} containerData, information returned from the API call.
+ * Retrieve data from the /containers API call and format as HTML for viewing. 
  */
-function viewContainers(containerData) {
-  let html = `<h2>Containers <img alt="refresh" class="control-aside" src="icons/refresh.svg" onclick="apiGet('/containers', viewContainers);"></h2>`;
+async function viewContainers() {
+  let html = `<h2>Containers <img alt="refresh" class="control-aside" src="icons/refresh.svg" onclick="viewContainers();"></h2>`;
   let template = `
     <details>
       <summary><img alt="{{State}}" src="icons/{{stateIcon}}"> {{name}}
@@ -165,51 +141,73 @@ function viewContainers(containerData) {
     </details>
   `;
 
-  let anyStopped = 0;
-  containerData.forEach(container => {
-    switch (container.State) {
-      case 'running':
-        container.stateIcon = 'play-circle-outline.svg';
-        break;
-      case 'exited':
-        container.stateIcon = 'stop-circle.svg';
-        anyStopped++;
-        break;
-      default:
-        container.stateIcon = 'question.svg';
-    }
-
-    container.name = container.Names[0].replace(/\//, '');
-
-    container.imageTag = container.ImageID;  // Use the sha256 ImageID as the fallback name, but...
-    images.forEach(image => {                // Look for a match in the known images for a more friendly name.
-      if (image.Id == container.ImageID) {
-        container.imageTag = image.RepoTags[0];
-      }
-    });
-
-    container.createDate = new Date(container.Created * 1000).toLocaleString();  // API uses unix epoch time.
-
-    // Replace template entries like {{property}} with properties found in the container object.
-    html += template.replace(/{{\w+}}/g, (match) => {
-      let property = match.replace(/^{{/, '').replace(/}}$/, '');
-      return container[property];
-    });
-  });
-
-  if (anyStopped) {
-    html += `<p><img alt="trash-can" class="control-aside" onclick="containerControl('prune');" src="icons/trash-can-outline.svg"><p>`;
+  // Image IDs are referenced in container. Fetching image data allows more friendly image tags.
+  // But it's not critical, so failure to retrieve is not fatal.
+  let imageData = [];
+  console.log(`Fetching image info from ${window.location.origin}/images`);
+  let imagesResponse = await fetch(window.location.origin + '/images');
+  if (imagesResponse.status != 200) {
+    console.log(`${imagesResponse.status} received while fetching ${window.location.origin}/images`);
+  }
+  else {
+    imageData = JSON.parse(await imagesResponse.text());
+    console.log(`${imageData.length} image(s) retrieved.`);
   }
 
-  document.getElementsByTagName('main')[0].innerHTML = html;
+  console.log(`Fetching container info from ${window.location.origin}/containers`);
+  let containersResponse = await fetch(window.location.origin + '/containers');
+  if (containersResponse.status != 200) {
+    console.log(`${containersResponse.status} received while fetching ${window.location.origin}/containers`);
+    html += `<p>API error ${containersResponse.status}</p>`;
+  }
+  else {
+    let containerData = JSON.parse(await containersResponse.text());
+    console.log(`${containerData.length} container(s) retrieved.`);
+
+    let anyStopped = 0;
+    containerData.forEach(container => {
+      switch (container.State) {
+        case 'running':
+          container.stateIcon = 'play-circle-outline.svg';
+          break;
+        case 'exited':
+          container.stateIcon = 'stop-circle.svg';
+          anyStopped++;
+          break;
+        default:
+          container.stateIcon = 'question.svg';
+      }
+
+      container.name = container.Names[0].replace(/\//, '');  // Names come with a leading /, but it looks better without.
+
+      container.imageTag = container.ImageID;  // Use the sha256 ImageID as the fallback name, but...
+      imageData.forEach(image => {             // Look for a match in the known images for a more friendly name.
+        if (image.Id == container.ImageID) {
+          container.imageTag = image.RepoTags[0];
+        }
+      });
+
+      container.createDate = new Date(container.Created * 1000).toLocaleString();  // API uses unix epoch time.
+
+      html += template.replace(/{{\w+}}/g, (match) => {
+        let property = match.replace(/^{{/, '').replace(/}}$/, '');
+        return container[property];
+      });
+    });
+
+    if (anyStopped) {
+      html += `<p><img alt="trash-can" class="control-aside" onclick="containerControl('prune');" src="icons/trash-can-outline.svg"><p>`;
+    }
+
+    document.getElementsByTagName('main')[0].innerHTML = html;
+  }
 }
 
 /**
- * Call back to format the data from the /images API call as HTML for viewing. 
- * @param {object} imageData, information returned from the API call.
+ * Retrieve data from the /images API call and format as HTML for viewing. 
  */
-function viewImages(imageData) {
-  let html = `<h2>Images <img alt="refresh" class="control-aside" src="icons/refresh.svg" onclick="apiGet('/images', viewImages);"></h2>`;
+async function viewImages() {
+  let html = `<h2>Images <img alt="refresh" class="control-aside" src="icons/refresh.svg" onclick="viewImages();"></h2>`;
   let template = `
     <details>
       <summary><img alt="freshness indicator" src={{ageIcon}}> {{tag}}
@@ -225,58 +223,59 @@ function viewImages(imageData) {
     </details>
   `;
 
-  let now = new Date();  // Used as a baseline to calculate image age.
-  let anyUnused = 0;
-  imageData.forEach(image => {
-    image.createDate = new Date(image.Created * 1000).toLocaleString();
-    if (now - image.Created * 1000 < 30 * 86400000) {  // 86400000 is one day in milliseconds.
-      image.ageIcon = 'icons/calendar-check.svg';
-    }
-    else {
-      image.ageIcon = 'icons/calendar-clock.svg';
-    }
-
-    // When an image is updated, but a container still runs an old image, it's possible to have a null tag.
-    if (image.RepoTags) {
-      image.tag = image.RepoTags[0].replace(/</g, '&lt;').replace(/>/g, '&gt');
-    }
-    else {
-      image.tag = '&lt;none&gt;';
-      anyUnused++;
-    }
-
-    image.size = Math.round(image.Size / 1048576);
-
-    // Replace template entries like {{property}} with properties found in the image object.
-    html += template.replace(/{{\w+}}/g, (match) => {
-      let property = match.replace(/^{{/, '').replace(/}}$/, '');
-      return image[property];
-    });
-  });
-
-  if (anyUnused) {
-    html += `<p><img alt="trash-can" class="control-aside" onclick="imageControl('prune');" src="icons/trash-can-outline.svg"><p>`;
+  console.log(`Fetching image info from ${window.location.origin}/images`);
+  let imagesResponse = await fetch(window.location.origin + '/images');
+  if (imagesResponse.status != 200) {
+    console.log(`${imagesResponse.status} received while fetching ${window.location.origin}/images`);
+    html += `<p>API error ${imagesResponse.status}</p>`;
   }
+  else {
+    let imageData = JSON.parse(await imagesResponse.text());
+    console.log(`${imageData.length} image(s) retrieved.`);
 
-  document.getElementsByTagName('main')[0].innerHTML = html;
+    let now = new Date();  // Used as a baseline to calculate image age.
+    let anyUnused = 0;
+    imageData.forEach(image => {
+      image.createDate = new Date(image.Created * 1000).toLocaleString();
+      if (now - image.Created * 1000 < 30 * 86400000) {  // 86400000 is one day in milliseconds.
+        image.ageIcon = 'icons/calendar-check.svg';
+      }
+      else {
+        image.ageIcon = 'icons/calendar-clock.svg';
+      }
+
+      // When an image is updated, but a container still runs an old image, it's possible to have a null tag.
+      if (image.RepoTags) {
+        image.tag = image.RepoTags[0].replace(/</g, '&lt;').replace(/>/g, '&gt');
+      }
+      else {
+        image.tag = '&lt;none&gt;';
+        anyUnused++;
+      }
+
+      image.size = Math.round(image.Size / 1048576);
+
+      html += template.replace(/{{\w+}}/g, (match) => {
+        let property = match.replace(/^{{/, '').replace(/}}$/, '');
+        return image[property];
+      });
+    });
+
+    // Put a trash can in the footer to trigger prune.
+    if (anyUnused) {
+      html += `<p><img alt="trash-can" class="control-aside" onclick="imageControl('prune');" src="icons/trash-can-outline.svg"><p>`;
+    }
+
+    document.getElementsByTagName('main')[0].innerHTML = html;
+  }
 }
 
 /**
- * Callback to format the data from the /stacks API call as HTML for viewing. 
- * @param {object} stackData, information returned from the API call.
+ * Retrieve data from the /stacks API call and format as HTML for viewing. 
  */
-function viewStacks(stackData) {
-  let html = `<h2>Stacks <img alt="refresh" class="control-aside" src="icons/refresh.svg" onclick="apiGet('/stacks', viewStacks);"></h2>`;
-
-  if (stackData.length == 0) {
-    html += `
-      <p>Check out the
-        <a href="https://github.com/DavesCodeMusings/container-central/blob/main/docs/Git-Integration.md">Git Integration</a>
-        doc for configuration help.</p>
-    `;
-  }
-  else {
-    let template = `
+async function viewStacks() {
+  let html = `<h2>Stacks <img alt="refresh" class="control-aside" src="icons/refresh.svg" onclick="viewStacks();"></h2>`;
+  let template = `
     <details>
       <summary><img alt="stack icon" src='icons/view-dashboard-outline.svg'> {{project}}
         <span class="controls">
@@ -289,29 +288,40 @@ function viewStacks(stackData) {
     </details>
   `;
 
-    stackData.forEach(dockerCompose => {
-      dockerCompose.project = dockerCompose.filename.replace(/.yml/, '');
-      dockerCompose.lines = dockerCompose.content.split('\n').length;
+  console.log(`Fetching stack info from ${window.location.origin}/stacks`);
+  let stacksResponse = await fetch(window.location.origin + '/stacks');
+  if (stacksResponse.status != 200) {
+    console.log(`${stacksResponse.status} received while fetching ${window.location.origin}/stacks`);
+  }
+  else {
+    let stackData = JSON.parse(await stacksResponse.text());
+    console.log(`${stackData.length} stack(s) retrieved.`);
 
-      // Replace template entries like {{property}} with properties found in the dockerCompose object.
-      html += template.replace(/{{\w+}}/g, (match) => {
-        let property = match.replace(/^{{/, '').replace(/}}$/, '');
-        return dockerCompose[property];
+    if (stackData.length == 0) {
+      html += `<p>No stacks defined.</p>`;
+    }
+    else {
+      stackData.forEach(dockerCompose => {
+        dockerCompose.project = dockerCompose.filename.replace(/.yml/, '');
+        dockerCompose.lines = dockerCompose.content.split('\n').length;
+        html += template.replace(/{{\w+}}/g, (match) => {
+          let property = match.replace(/^{{/, '').replace(/}}$/, '');
+          return dockerCompose[property];
+        });
       });
-    });
+      document.getElementsByTagName('main')[0].innerHTML = html;
+    }
   }
 
-  html += `<p><img alt="pull" class="control-aside" onclick="alert('Not implemented');" src="icons/source-branch.svg"><p>`;
-  
+  html += `<p><img alt="pull" class="control-aside" onclick="alert('Not implemented yet.');" src="icons/source-branch.svg"><p>`;
   document.getElementsByTagName('main')[0].innerHTML = html;
 }
 
 /**
- * Callback to format the data from the /volumes API call as HTML for viewing. 
- * @param {object} volumeData, information returned from the API call.
+ * Retrieve data from the /volumes API call and format as HTML for viewing. 
  */
-function viewVolumes(volumeData) {
-  let html = `<h2>Volumes<img alt="refresh" class="control-aside" src="icons/refresh.svg" onclick="apiGet('/images', viewVolumes);"></h2>`;
+async function viewVolumes() {
+  let html = `<h2>Volumes<img alt="refresh" class="control-aside" src="icons/refresh.svg" onclick="viewVolumes();"></h2>`;
   let template = `
     <details>
       <summary><img alt="generic stack icon" src='icons/database-outline.svg'> {{Name}}</summary>
@@ -322,15 +332,21 @@ function viewVolumes(volumeData) {
     </details>
   `;
 
-  volumeData.Volumes.forEach(volume => {
-    volume.timeStamp = new Date(volume.CreatedAt).toLocaleString();
-
-    // Replace template entries like {{property}} with properties found in the volume object.
-    html += template.replace(/{{\w+}}/g, (match) => {
-      let property = match.replace(/^{{/, '').replace(/}}$/, '');
-      return volume[property];
+  console.log(`Fetching volume info from ${window.location.origin}/volumes`);
+  let volumesResponse = await fetch(window.location.origin + '/volumes');
+  if (volumesResponse.status != 200) {
+    console.log(`${volumesResponse.status} received while fetching ${window.location.origin}/volumes`);
+  }
+  else {
+    let volumeData = JSON.parse(await volumesResponse.text());
+    console.log(`${volumeData.Volumes.length} volume(s) retrieved.`);
+    volumeData.Volumes.forEach(volume => {
+      volume.timeStamp = new Date(volume.CreatedAt).toLocaleString();
+      html += template.replace(/{{\w+}}/g, (match) => {
+        let property = match.replace(/^{{/, '').replace(/}}$/, '');
+        return volume[property];
+      });
     });
-  })
-
-  document.getElementsByTagName('main')[0].innerHTML = html;
+    document.getElementsByTagName('main')[0].innerHTML = html;
+  }
 }
