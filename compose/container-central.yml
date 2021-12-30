@@ -1,0 +1,14 @@
+services:
+    container-central:
+        image: davescodemusings/container-central:latest
+        container_name: container-central
+        hostname: container-central
+        restart: unless-stopped
+        ports:
+        - 8088:8088
+        volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
+        - compose:/app/compose
+
+volumes:
+    compose:
