@@ -25,7 +25,7 @@ My idea is to focus on the features needed for a typical Raspberry Pi home serve
 
 1. You find an interesting Docker container and start it with `docker run`. You can use Container Central to stop and start the container and to pull updated images.
 2. You have a docker-compose.yml that you've used to deploy one or more containers. You can copy the docker-compose.yml to Container Central's _compose_ directory. Now you can control the stack by pointing and clicking.
-3. You've got old containers or images that you want to remove. Sorry, Container Central can't do that yet. You'll have to use `docker rm` or another tool.
+3. You've got old containers or images that you want to remove. Container Central will show a trash can icon in the lower right corner. Clicking this is like running `docker container prune` or `docker image prune`.
 
 There are more features to add, but I'm starting small and working my way up. This is a hobby, not a business venture.
 
