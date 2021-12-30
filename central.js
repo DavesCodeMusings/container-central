@@ -51,7 +51,8 @@ function callAPI(req, res) {
       data += d.toString();
     });
     apiRes.on('end', () => {
-      console.log(`${apiRes.statusCode} - ${apiOptions.path}`);
+      let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+      console.log(`${apiRes.statusCode} ${ip} ${apiOptions.path}`);
       res.setHeader("Content-Type", "application/json");
       res.send(data);
     });
@@ -102,7 +103,8 @@ app.get('/info', (req, res) => {
       data += d.toString();
     });
     apiRes.on('end', () => {
-      console.log(`${apiRes.statusCode} - ${apiOptions.path}`);
+      let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+      console.log(`${apiRes.statusCode} ${ip} ${apiOptions.path}`);
       let info = JSON.parse(data);
       let files = fs.readdirSync(composeDirectory);
       info.stacks = files.length;
@@ -147,7 +149,8 @@ app.post('/containers/:containerId/:action', (req, res) => {
         data += d.toString();
       });
       apiRes.on('end', () => {
-        console.log(`${apiRes.statusCode} - ${apiOptions.path}`);
+        let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+        console.log(`${apiRes.statusCode} ${ip} ${apiOptions.path}`);
         let message = '';
         switch (apiRes.statusCode) {
           case 204:
@@ -189,7 +192,8 @@ app.post('/:target/prune', (req, res) => {
           data += d.toString();
         });
         apiRes.on('end', () => {
-          console.log(`${apiRes.statusCode} - ${apiOptions.path}`);
+          let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+          console.log(`${apiRes.statusCode} ${ip} ${apiOptions.path}`);
           res.status(apiRes.statusCode);
           res.send('"success"');  // JSON is expected by the client, so extra quoting is required.
         });
@@ -222,7 +226,8 @@ app.post('/pull/:imageTag', (req, res) => {
       data += d.toString();
     });
     apiRes.on('end', () => {
-      console.log(`${apiRes.statusCode} - ${apiOptions.path}`);
+      let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+      console.log(`${apiRes.statusCode} ${ip} ${apiOptions.path}`);
       res.status(apiRes.statusCode);
       res.setHeader("Content-Type", "application/json");
       res.send(JSON.stringify(data, null, 2));
@@ -230,7 +235,6 @@ app.post('/pull/:imageTag', (req, res) => {
   });
   apiReq.on('error', err => {
     console.error(err)
-    res.status(apiRes.statusCode);
   });
   apiReq.end();
 });

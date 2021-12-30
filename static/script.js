@@ -28,20 +28,25 @@ async function viewInfo() {
   `;
 
   console.log(`Fetching info from ${window.location.origin}/info`);
-  let infoResponse = await fetch(window.location.origin + '/info');
-  if (infoResponse.status != 200) {
-    console.log(`${infoResponse.status} received while fetching ${window.location.origin}/info`);
+  try {
+    let infoResponse = await fetch(window.location.origin + '/info');
+    if (infoResponse.status != 200) {
+      console.log(`${infoResponse.status} received while fetching ${window.location.origin}/info`);
+    }
+    else {
+      let info = await infoResponse.json();
+      info.ram = (info.MemTotal / 1024 / 1024 / 1024).toFixed(2);  // measuring in Gig seems a safe bet
+
+      html += template.replace(/{{\w+}}/g, (match) => {
+        let property = match.replace(/^{{/, '').replace(/}}$/, '');
+        return info[property];
+      });
+
+      document.getElementsByTagName('main')[0].innerHTML = html;
+    }
   }
-  else {
-    let info = await infoResponse.json();
-    info.ram = (info.MemTotal / 1024 / 1024 / 1024).toFixed(2);  // measuring in Gig seems a safe bet
-
-    html += template.replace(/{{\w+}}/g, (match) => {
-      let property = match.replace(/^{{/, '').replace(/}}$/, '');
-      return info[property];
-    });
-
-    document.getElementsByTagName('main')[0].innerHTML = html;
+  catch {
+    alert(`API request failed.`);
   }
 }
 
@@ -53,13 +58,13 @@ async function viewInfo() {
 async function containerControl(action, containerId) {
   if (containerId) {
     console.log(`Telling conntainer ${containerId} to ${action}`);
-    let response = await fetch(`/containers/${containerId}/${action}`, { method: 'POST'});
+    let response = await fetch(`/containers/${containerId}/${action}`, { method: 'POST' });
     if (response.status == 200) {
       alert(`Successful container ${action}.`);
     }
   }
   else {
-    let response = await fetch(`/containers/${action}`, { method: 'POST'});
+    let response = await fetch(`/containers/${action}`, { method: 'POST' });
     if (response.status == 200) {
       alert(`Successful container ${action}.`);
     }
@@ -74,13 +79,13 @@ async function containerControl(action, containerId) {
 async function imageControl(action, imageTag) {
   if (action == 'pull') {
     let encodedImageTag = encodeURIComponent(imageTag);
-    let response = await fetch(`/pull/${encodedImageTag}`, { method: 'POST'});
+    let response = await fetch(`/pull/${encodedImageTag}`, { method: 'POST' });
     if (response.status == 200) {
       alert(`Successful image ${action}.`);
     }
   }
   if (action == 'prune') {
-    let response = await fetch('/images/prune', { method: 'POST'});
+    let response = await fetch('/images/prune', { method: 'POST' });
     if (response.status == 200) {
       alert(`Successful image ${action}.`);
     }
@@ -94,7 +99,7 @@ async function imageControl(action, imageTag) {
  */
 async function stackControl(action, stackName) {
   console.log(`docker-compose ${stackName} ${action}`);
-  let response = await fetch(`/stacks/${stackName}/${action}`, { method: 'POST'});
+  let response = await fetch(`/stacks/${stackName}/${action}`, { method: 'POST' });
   if (response.status == 200) {
     alert(`Successful stack ${action}.`);
   }
@@ -127,61 +132,66 @@ async function viewContainers() {
   // But it's not critical, so failure to retrieve is not fatal.
   let imageData = [];
   console.log(`Fetching image info from ${window.location.origin}/images`);
-  let imagesResponse = await fetch(window.location.origin + '/images');
-  if (imagesResponse.status != 200) {
-    console.log(`${imagesResponse.status} received while fetching ${window.location.origin}/images`);
-  }
-  else {
-    imageData = await imagesResponse.json();
-    console.log(`${imageData.length} image(s) retrieved.`);
-  }
-
-  console.log(`Fetching container info from ${window.location.origin}/containers`);
-  let containersResponse = await fetch(window.location.origin + '/containers');
-  if (containersResponse.status != 200) {
-    console.log(`${containersResponse.status} received while fetching ${window.location.origin}/containers`);
-    html += `<p>API error ${containersResponse.status}</p>`;
-  }
-  else {
-    let containerData = await containersResponse.json();
-    console.log(`${containerData.length} container(s) retrieved.`);
-
-    let anyStopped = 0;
-    containerData.forEach(container => {
-      switch (container.State) {
-        case 'running':
-          container.stateIcon = 'play-circle-outline.svg';
-          break;
-        case 'exited':
-          container.stateIcon = 'stop-circle.svg';
-          anyStopped++;
-          break;
-        default:
-          container.stateIcon = 'question.svg';
-      }
-
-      container.name = container.Names[0].replace(/\//, '');  // Names come with a leading /, but it looks better without.
-
-      container.imageTag = container.ImageID;  // Use the sha256 ImageID as the fallback name, but...
-      imageData.forEach(image => {             // Look for a match in the known images for a more friendly name.
-        if (image.Id == container.ImageID && image.RepoTags) {
-          container.imageTag = image.RepoTags[0];
-        }
-      });
-
-      container.createDate = new Date(container.Created * 1000).toLocaleString();  // API uses unix epoch time.
-
-      html += template.replace(/{{\w+}}/g, (match) => {
-        let property = match.replace(/^{{/, '').replace(/}}$/, '');
-        return container[property];
-      });
-    });
-
-    if (anyStopped) {
-      html += `<p><img alt="trash-can" class="control-aside" onclick="containerControl('prune');" src="icons/trash-can-outline.svg"><p>`;
+  try {
+    let imagesResponse = await fetch(window.location.origin + '/images');
+    if (imagesResponse.status != 200) {
+      console.log(`${imagesResponse.status} received while fetching ${window.location.origin}/images`);
+    }
+    else {
+      imageData = await imagesResponse.json();
+      console.log(`${imageData.length} image(s) retrieved.`);
     }
 
-    document.getElementsByTagName('main')[0].innerHTML = html;
+    console.log(`Fetching container info from ${window.location.origin}/containers`);
+    let containersResponse = await fetch(window.location.origin + '/containers');
+    if (containersResponse.status != 200) {
+      console.log(`${containersResponse.status} received while fetching ${window.location.origin}/containers`);
+      html += `<p>API error ${containersResponse.status}</p>`;
+    }
+    else {
+      let containerData = await containersResponse.json();
+      console.log(`${containerData.length} container(s) retrieved.`);
+
+      let anyStopped = 0;
+      containerData.forEach(container => {
+        switch (container.State) {
+          case 'running':
+            container.stateIcon = 'play-circle-outline.svg';
+            break;
+          case 'exited':
+            container.stateIcon = 'stop-circle.svg';
+            anyStopped++;
+            break;
+          default:
+            container.stateIcon = 'question.svg';
+        }
+
+        container.name = container.Names[0].replace(/\//, '');  // Names come with a leading /, but it looks better without.
+
+        container.imageTag = container.ImageID;  // Use the sha256 ImageID as the fallback name, but...
+        imageData.forEach(image => {             // Look for a match in the known images for a more friendly name.
+          if (image.Id == container.ImageID && image.RepoTags) {
+            container.imageTag = image.RepoTags[0];
+          }
+        });
+
+        container.createDate = new Date(container.Created * 1000).toLocaleString();  // API uses unix epoch time.
+
+        html += template.replace(/{{\w+}}/g, (match) => {
+          let property = match.replace(/^{{/, '').replace(/}}$/, '');
+          return container[property];
+        });
+      });
+
+      if (anyStopped) {
+        html += `<p><img alt="trash-can" class="control-aside" onclick="containerControl('prune');" src="icons/trash-can-outline.svg"><p>`;
+      }
+
+      document.getElementsByTagName('main')[0].innerHTML = html;
+    }
+  }
+  catch {
+    alert(`API request failed.`);
   }
 }
 
@@ -206,49 +216,54 @@ async function viewImages() {
   `;
 
   console.log(`Fetching image info from ${window.location.origin}/images`);
-  let imagesResponse = await fetch(window.location.origin + '/images');
-  if (imagesResponse.status != 200) {
-    console.log(`${imagesResponse.status} received while fetching ${window.location.origin}/images`);
-    html += `<p>API error ${imagesResponse.status}</p>`;
-  }
-  else {
-    let imageData = await imagesResponse.json();
-    console.log(`${imageData.length} image(s) retrieved.`);
-
-    let now = new Date();  // Used as a baseline to calculate image age.
-    let anyUnused = 0;
-    imageData.forEach(image => {
-      image.createDate = new Date(image.Created * 1000).toLocaleString();
-      if (now - image.Created * 1000 < 30 * 86400000) {  // 86400000 is one day in milliseconds.
-        image.ageIcon = 'icons/calendar-check.svg';
-      }
-      else {
-        image.ageIcon = 'icons/calendar-clock.svg';
-      }
-
-      // When an image is updated, but a container still runs an old image, it's possible to have a null tag.
-      if (image.RepoTags) {
-        image.tag = image.RepoTags[0].replace(/</g, '&lt;').replace(/>/g, '&gt');
-      }
-      else {
-        image.tag = '&lt;none&gt;';
-        anyUnused++;
-      }
-
-      image.size = Math.round(image.Size / 1048576);
-
-      html += template.replace(/{{\w+}}/g, (match) => {
-        let property = match.replace(/^{{/, '').replace(/}}$/, '');
-        return image[property];
-      });
-    });
-
-    // Put a trash can in the footer to trigger prune.
-    if (anyUnused) {
-      html += `<p><img alt="trash-can" class="control-aside" onclick="imageControl('prune');" src="icons/trash-can-outline.svg"><p>`;
+  try {
+    let imagesResponse = await fetch(window.location.origin + '/images');
+    if (imagesResponse.status != 200) {
+      console.log(`${imagesResponse.status} received while fetching ${window.location.origin}/images`);
+      html += `<p>API error ${imagesResponse.status}</p>`;
     }
+    else {
+      let imageData = await imagesResponse.json();
+      console.log(`${imageData.length} image(s) retrieved.`);
 
-    document.getElementsByTagName('main')[0].innerHTML = html;
+      let now = new Date();  // Used as a baseline to calculate image age.
+      let anyUnused = 0;
+      imageData.forEach(image => {
+        image.createDate = new Date(image.Created * 1000).toLocaleString();
+        if (now - image.Created * 1000 < 30 * 86400000) {  // 86400000 is one day in milliseconds.
+          image.ageIcon = 'icons/calendar-check.svg';
+        }
+        else {
+          image.ageIcon = 'icons/calendar-clock.svg';
+        }
+
+        // When an image is updated, but a container still runs an old image, it's possible to have a null tag.
+        if (image.RepoTags) {
+          image.tag = image.RepoTags[0].replace(/</g, '&lt;').replace(/>/g, '&gt');
+        }
+        else {
+          image.tag = '&lt;none&gt;';
+          anyUnused++;
+        }
+
+        image.size = Math.round(image.Size / 1048576);
+
+        html += template.replace(/{{\w+}}/g, (match) => {
+          let property = match.replace(/^{{/, '').replace(/}}$/, '');
+          return image[property];
+        });
+      });
+
+      // Put a trash can in the footer to trigger prune.
+      if (anyUnused) {
+        html += `<p><img alt="trash-can" class="control-aside" onclick="imageControl('prune');" src="icons/trash-can-outline.svg"><p>`;
+      }
+
+      document.getElementsByTagName('main')[0].innerHTML = html;
+    }
+  }
+  catch {
+    alert(`API request failed.`);
   }
 }
 
@@ -271,32 +286,37 @@ async function viewStacks() {
   `;
 
   console.log(`Fetching stack info from ${window.location.origin}/stacks`);
-  let stacksResponse = await fetch(window.location.origin + '/stacks');
-  if (stacksResponse.status != 200) {
-    console.log(`${stacksResponse.status} received while fetching ${window.location.origin}/stacks`);
-  }
-  else {
-    let stackData = await stacksResponse.json();
-    console.log(`${stackData.length} stack(s) retrieved.`);
-
-    if (stackData.length == 0) {
-      html += `<p>No stacks defined.</p>`;
+  try {
+    let stacksResponse = await fetch(window.location.origin + '/stacks');
+    if (stacksResponse.status != 200) {
+      console.log(`${stacksResponse.status} received while fetching ${window.location.origin}/stacks`);
     }
     else {
-      stackData.forEach(dockerCompose => {
-        dockerCompose.project = dockerCompose.filename.replace(/.yml/, '');
-        dockerCompose.lines = dockerCompose.content.split('\n').length;
-        html += template.replace(/{{\w+}}/g, (match) => {
-          let property = match.replace(/^{{/, '').replace(/}}$/, '');
-          return dockerCompose[property];
-        });
-      });
-      document.getElementsByTagName('main')[0].innerHTML = html;
-    }
-  }
+      let stackData = await stacksResponse.json();
+      console.log(`${stackData.length} stack(s) retrieved.`);
 
-  html += `<p><img alt="pull" class="control-aside" onclick="alert('Not implemented yet.');" src="icons/source-branch.svg"><p>`;
-  document.getElementsByTagName('main')[0].innerHTML = html;
+      if (stackData.length == 0) {
+        html += `<p>No stacks defined.</p>`;
+      }
+      else {
+        stackData.forEach(dockerCompose => {
+          dockerCompose.project = dockerCompose.filename.replace(/.yml/, '');
+          dockerCompose.lines = dockerCompose.content.split('\n').length;
+          html += template.replace(/{{\w+}}/g, (match) => {
+            let property = match.replace(/^{{/, '').replace(/}}$/, '');
+            return dockerCompose[property];
+          });
+        });
+        document.getElementsByTagName('main')[0].innerHTML = html;
+      }
+    }
+
+    html += `<p><img alt="pull" class="control-aside" onclick="alert('Not implemented yet.');" src="icons/source-branch.svg"><p>`;
+    document.getElementsByTagName('main')[0].innerHTML = html;
+  }
+  catch {
+    alert(`API request failed.`);
+  }
 }
 
 /**
@@ -315,20 +335,25 @@ async function viewVolumes() {
   `;
 
   console.log(`Fetching volume info from ${window.location.origin}/volumes`);
-  let volumesResponse = await fetch(window.location.origin + '/volumes');
-  if (volumesResponse.status != 200) {
-    console.log(`${volumesResponse.status} received while fetching ${window.location.origin}/volumes`);
-  }
-  else {
-    let volumeData = await volumesResponse.json();
-    console.log(`${volumeData.Volumes.length} volume(s) retrieved.`);
-    volumeData.Volumes.forEach(volume => {
-      volume.timeStamp = new Date(volume.CreatedAt).toLocaleString();
-      html += template.replace(/{{\w+}}/g, (match) => {
-        let property = match.replace(/^{{/, '').replace(/}}$/, '');
-        return volume[property];
+  try {
+    let volumesResponse = await fetch(window.location.origin + '/volumes');
+    if (volumesResponse.status != 200) {
+      console.log(`${volumesResponse.status} received while fetching ${window.location.origin}/volumes`);
+    }
+    else {
+      let volumeData = await volumesResponse.json();
+      console.log(`${volumeData.Volumes.length} volume(s) retrieved.`);
+      volumeData.Volumes.forEach(volume => {
+        volume.timeStamp = new Date(volume.CreatedAt).toLocaleString();
+        html += template.replace(/{{\w+}}/g, (match) => {
+          let property = match.replace(/^{{/, '').replace(/}}$/, '');
+          return volume[property];
+        });
       });
-    });
-    document.getElementsByTagName('main')[0].innerHTML = html;
+      document.getElementsByTagName('main')[0].innerHTML = html;
+    }
+  }
+  catch {
+    alert(`API request failed.`);
   }
 }
