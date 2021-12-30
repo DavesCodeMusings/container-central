@@ -121,9 +121,9 @@ async function viewContainers() {
       </summary>
       <p>
         {{Id}}<br>
-        <a href="javascript:viewImages();">{{imageTag}}</a><br>
+        <a href="javascript:viewImages('{{imageTag}}');">{{imageTag}}</a><br>
         {{createDate}}<br>
-        {{Status}} <a href="javascript:viewStacks();"><i>{{stackName}}</i></a><br>
+        {{Status}} <a href="javascript:viewStacks('{{stackName}}');"><i>{{stackName}}</i></a><br>
       </p>
     </details>
   `;
@@ -203,12 +203,13 @@ async function viewContainers() {
 }
 
 /**
- * Retrieve data from the /images API call and format as HTML for viewing. 
+ * Retrieve data from the /images API call and format as HTML for viewing.
+ * @param {string} tagOfInterest, image tag used to open the details for a particular image.
  */
-async function viewImages() {
+async function viewImages(tagOfInterest) {
   let html = `<h2>Images <img alt="refresh" class="control-aside" src="icons/refresh.svg" onclick="viewImages();"></h2>`;
   let template = `
-    <details>
+    <details id="{{tag}}">
       <summary><img alt="freshness indicator" src={{ageIcon}}> {{tag}}
         <span class="controls">
           <a href="javascript:imageControl('pull', '{{tag}}')" title="Pull latest image"><img alt="pull" src="icons/download.svg"></a>
@@ -272,15 +273,19 @@ async function viewImages() {
   catch {
     alert(`API request failed.`);
   }
+
+  if (tagOfInterest) {
+    document.getElementById(tagOfInterest).open = true;  
+  }
 }
 
 /**
  * Retrieve data from the /stacks API call and format as HTML for viewing. 
  */
-async function viewStacks() {
+async function viewStacks(projectOfInterest) {
   let html = `<h2>Stacks <img alt="refresh" class="control-aside" src="icons/refresh.svg" onclick="viewStacks();"></h2>`;
   let template = `
-    <details>
+    <details id="{{project}}">
       <summary><img alt="stack icon" src='icons/format-list-bulleted-type.svg'> {{project}}
         <span class="controls">
           <a href="javascript:stackControl('up', '{{project}}');" title="Deploy Stack"><img alt="Up" src="icons/arrow-up-thick.svg"></a>
@@ -323,6 +328,10 @@ async function viewStacks() {
   }
   catch {
     alert(`API request failed.`);
+  }
+
+  if (projectOfInterest) {
+    document.getElementById(projectOfInterest).open = true;  
   }
 }
 
