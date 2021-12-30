@@ -164,7 +164,7 @@ async function viewContainers() {
 
       container.imageTag = container.ImageID;  // Use the sha256 ImageID as the fallback name, but...
       imageData.forEach(image => {             // Look for a match in the known images for a more friendly name.
-        if (image.Id == container.ImageID) {
+        if (image.Id == container.ImageID && image.RepoTags) {
           container.imageTag = image.RepoTags[0];
         }
       });
