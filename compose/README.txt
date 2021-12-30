@@ -1,1 +1,1 @@
-The file here is just for an example. It's not required for any functionality.
+nginx-test.yml is just for an example. It's not required for any functionality.
