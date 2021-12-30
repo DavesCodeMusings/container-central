@@ -74,6 +74,12 @@ nav .label {
   display: none;
 }
 
+textarea[readonly] {
+  background-color: white;
+  border: 1px solid black;
+  color: dimgray;
+}
+
 /* Arrange navigation on the left side for wide screens. */
 @media (min-aspect-ratio: 1/1) {
   nav {
@@ -127,4 +133,10 @@ nav .label {
   img {
     filter: invert(100%);
   }
+
+  textarea[readonly] {
+    background-color: #333333;
+    border: 1px solid white;
+    color: lightgray;
+  }  
 }
