@@ -66,7 +66,7 @@ async function viewInfo() {
     console.log(`${infoResponse.status} received while fetching ${window.location.origin}/info`);
   }
   else {
-    let info = JSON.parse(await infoResponse.text());
+    let info = await infoResponse.json();
     info.ram = (info.MemTotal / 1024 / 1024 / 1024).toFixed(2);  // measuring in Gig seems a safe bet
 
     html += template.replace(/{{\w+}}/g, (match) => {
@@ -150,7 +150,7 @@ async function viewContainers() {
     console.log(`${imagesResponse.status} received while fetching ${window.location.origin}/images`);
   }
   else {
-    imageData = JSON.parse(await imagesResponse.text());
+    imageData = await imagesResponse.json();
     console.log(`${imageData.length} image(s) retrieved.`);
   }
 
@@ -161,7 +161,7 @@ async function viewContainers() {
     html += `<p>API error ${containersResponse.status}</p>`;
   }
   else {
-    let containerData = JSON.parse(await containersResponse.text());
+    let containerData = await containersResponse.json();
     console.log(`${containerData.length} container(s) retrieved.`);
 
     let anyStopped = 0;
@@ -230,7 +230,7 @@ async function viewImages() {
     html += `<p>API error ${imagesResponse.status}</p>`;
   }
   else {
-    let imageData = JSON.parse(await imagesResponse.text());
+    let imageData = await imagesResponse.json();
     console.log(`${imageData.length} image(s) retrieved.`);
 
     let now = new Date();  // Used as a baseline to calculate image age.
@@ -294,7 +294,7 @@ async function viewStacks() {
     console.log(`${stacksResponse.status} received while fetching ${window.location.origin}/stacks`);
   }
   else {
-    let stackData = JSON.parse(await stacksResponse.text());
+    let stackData = await stacksResponse.json();
     console.log(`${stackData.length} stack(s) retrieved.`);
 
     if (stackData.length == 0) {
@@ -338,7 +338,7 @@ async function viewVolumes() {
     console.log(`${volumesResponse.status} received while fetching ${window.location.origin}/volumes`);
   }
   else {
-    let volumeData = JSON.parse(await volumesResponse.text());
+    let volumeData = await volumesResponse.json();
     console.log(`${volumeData.Volumes.length} volume(s) retrieved.`);
     volumeData.Volumes.forEach(volume => {
       volume.timeStamp = new Date(volume.CreatedAt).toLocaleString();
