@@ -1,6 +1,6 @@
 # Git Integration for Stacks
 
-_This is a work in progress. Additional development is needed before git integration is supported._
+_This is a work in progress._
 
 With a little configuration, Container Central can reference Docker Compose YAML stored in a git repository. Here's a high-level view of the steps:
 
@@ -29,7 +29,7 @@ docker run -d \
   -p 8088:8088 \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -v config.json:/app/config.json \
-  -v ./compose-files:/app/compose \
+  -v ${PWD}/compose-files:/app/compose \
   davescodemusings/container-central:latest
 ```
 
