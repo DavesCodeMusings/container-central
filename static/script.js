@@ -21,12 +21,42 @@ async function viewInfo() {
       </span>
       <span style="margin-right: 1em;">
         <a href="javascript:viewStacks()" title="Stacks">
-          <img alt="Stacks:" src="icons/format-list-bulleted-type.svg"> {{stacks}}
+          <img alt="Stacks:" src="icons/format-list-bulleted-type.svg"> {{numStacks}}
+        </a>
+      </span>
+      <span style="margin-right: 1em;">
+        <a href="javascript:viewStacks()" title="Volumes">
+          <img alt="Volumes:" src="icons/database-outline.svg"> {{numVolumes}}
         </a>
       </span>
     </p>
   `;
 
+  // Docker Compose "stacks" are not part of the /info API call.
+  console.log(`Fetching stacks from ${window.location.origin}/stacks`);
+  let numStacks = 0;
+  let stacksResponse = await fetch(window.location.origin + '/stacks');
+  if (stacksResponse.status != 200) {
+    console.log(`${stacksResponse.status} received while fetching ${window.location.origin}/stacks`);
+  }
+  else {
+    let stacksInfo = await stacksResponse.json();
+    numStacks = stacksInfo.length;
+  }
+
+  // A count of volumes is not included in /info and muct be gathered separately.
+  console.log(`Fetching volumes from ${window.location.origin}/volumes`);
+  let numVolumes = 0;
+  let volumesResponse = await fetch(window.location.origin + '/volumes');
+  if (volumesResponse.status != 200) {
+    console.log(`${volumesResponse.status} received while fetching ${window.location.origin}/volumes`);
+  }
+  else {
+    let volumesInfo = await volumesResponse.json();
+    numVolumes = volumesInfo.Volumes.length; 
+  }
+
+  // All of the other information comes from /info.
   console.log(`Fetching info from ${window.location.origin}/info`);
   try {
     let infoResponse = await fetch(window.location.origin + '/info');
@@ -36,6 +66,8 @@ async function viewInfo() {
     else {
       let info = await infoResponse.json();
       info.ram = (info.MemTotal / 1024 / 1024 / 1024).toFixed(2);  // measuring in Gig seems a safe bet
+      info.numStacks = numStacks;
+      info.numVolumes = numVolumes;
 
       html += template.replace(/{{\w+}}/g, (match) => {
         let property = match.replace(/^{{/, '').replace(/}}$/, '');

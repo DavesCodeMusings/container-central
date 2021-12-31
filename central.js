@@ -87,36 +87,8 @@ app.get('/script.js', (req, res) => {
 /* API routes */
 app.get('/containers', callAPI);
 app.get('/images', callAPI);
+app.get('/info', callAPI);
 app.get('/volumes', callAPI);
-
-app.get('/info', (req, res) => {
-  let apiOptions = {
-    socketPath: dockerSocket,
-    method: 'GET',
-    path: '/info'
-  };
-
-  let data = '';
-
-  const apiReq = http.request(apiOptions, (apiRes) => {
-    apiRes.on('data', d => {
-      data += d.toString();
-    });
-    apiRes.on('end', () => {
-      let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-      console.log(`${apiRes.statusCode} ${ip} ${apiOptions.path}`);
-      let info = JSON.parse(data);
-      let files = fs.readdirSync(composeDirectory).filter(file => file.endsWith('.yml'));
-      info.stacks = files.length;
-      res.setHeader("Content-Type", "application/json");
-      res.send(JSON.stringify(info, null, 2));
-    });
-  });
-  apiReq.on('error', err => {
-    console.error(err)
-  });
-  apiReq.end();
-});
 
 app.get('/stacks', (req, res) => {
   let files = fs.readdirSync(composeDirectory).filter(file => file.endsWith('.yml'));
