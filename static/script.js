@@ -10,9 +10,133 @@ function showAlert(msg) {
 }
 
 /**
+ * A wrapper for the /containers start, stop API calls.
+ * @param {string} action, one of: start, stop, restart, prune.
+ * @param {string} containerId, the uuid of the container.
+ */
+async function containerControl(action, containerId) {
+  switch (action) {
+    case 'start':
+      showAlert('Starting container...');
+      break;
+    case 'stop':
+      showAlert('Stopping container...');
+      break;
+    case 'prune':
+      showAlert('Pruning stopped containers...');
+    default:
+      showAlert(`Container ${action}...`);
+  }
+  if (containerId) {
+    let response = await fetch(`/containers/${containerId}/${action}`, { method: 'POST' });
+    if (response.status == 200) {
+      switch (action) {
+        case 'start':
+          showAlert('Container started.');
+          break;
+        case 'stop':
+          showAlert('Container stopped.');
+          break;
+        default:
+          showAlert(`Successful container ${action}.`);
+      }
+    }
+    viewContainers();
+  }
+  else {  // Actions that do not act on a specific container ID.
+    let response = await fetch(`/containers/${action}`, { method: 'POST' });
+    if (response.status == 200) {
+      switch (action) {
+        case 'prune':
+          showAlert('Containers pruned.');
+          break;
+        default:
+          showAlert(`Successful container ${action}.`);
+      }
+    }
+    viewContainers();
+  }
+}
+
+/**
+ * A wrapper for the /images API call that URI encodes the image tag.
+ * @param {string} action, one of: pull, prune.
+ * @param {string} imageTag, in the format name:tag. (e.g. debian:lite)
+ */
+async function imageControl(action, imageTag) {
+  if (action == 'pull') {
+    showAlert('Pulling image...');
+    let encodedImageTag = encodeURIComponent(imageTag);
+    let response = await fetch(`/images/pull/${encodedImageTag}`, { method: 'POST' });
+    if (response.status == 200) {
+      showAlert('Image pull complete.');
+    }
+    viewImages();
+  }
+  if (action == 'prune') {
+    showAlert('Pruning images...');
+    let response = await fetch('/images/prune', { method: 'POST' });
+    if (response.status == 200) {
+      showAlert('Images pruned.');
+    }
+    viewImages();
+  }
+}
+
+/**
+ * A wrapper for the /stacks up, down, restart API calls.
+ * @param {string} action, one of: start, stop, restart.
+ * @param {string} stackName, the project name for the stack.
+ */
+async function stackControl(action, stackName) {
+  switch (action) {
+    case 'git-pull':
+      showAlert('Pulling compose files from git repository...');
+      break;
+    case 'up':
+      showAlert(`Deploying ${stackName}...`);
+      break;
+    case 'down':
+      showAlert(`Stopping ${stackName}...`);
+      break;
+    case 'restart':
+      showAlert(`Redeploying ${stackName}...`);
+      break;
+    default:
+      showAlert(`${stackName} ${action}`);
+  }
+  if (action == 'git-pull') {
+    let response = await fetch(`/stacks/git/pull`);
+    if (response.status == 200) {
+      showAlert('Compose files updated.');
+    }
+    viewStacks();
+  }
+  else {
+    let response = await fetch(`/stacks/${stackName}/${action}`, { method: 'POST' });
+    if (response.status == 200) {
+      switch (action) {
+        case 'up':
+          showAlert(`${stackName} deployed.`);
+          break;
+        case 'down':
+          showAlert(`${stackName} is down.`);
+          break;
+        case 'restart':
+          showAlert(`${stackName} redeployed.`);
+          break;
+        default:
+          showAlert(`${stackName} ${action} complete.`);
+      }
+    }
+    viewStacks();
+  }
+}
+
+/**
  * Retrieve data from the /containers API call and format as HTML for viewing. 
  */
-async function viewInfo() {
+ async function viewInfo() {
   let html = '';
   let template = `
     <h2>{{Name}}</h2>
@@ -93,85 +217,6 @@ async function viewInfo() {
     showAlert(`API request failed.`);
   }
 }
-
-/**
- * A wrapper for the /containers start, stop API calls.
- * @param {string} action, one of: start, stop, restart, prune.
- * @param {string} containerId, the uuid of the container.
- */
-async function containerControl(action, containerId) {
-  if (containerId) {
-    console.log(`Telling conntainer ${containerId} to ${action}`);
-    switch (action) {
-      case 'start':
-        showAlert('Starting container...');
-        break;
-      case 'stop':
-        showAlert('Stopping container...');
-        break;
-    }
-    let response = await fetch(`/containers/${containerId}/${action}`, { method: 'POST' });
-    if (response.status == 200) {
-      switch (action) {
-        case 'start':
-          showAlert('Container started.');
-          break;
-        case 'stop':
-          showAlert('Container stopped.');
-          break;
-      }
-    }
-  }
-  else {
-    let response = await fetch(`/containers/${action}`, { method: 'POST' });
-    if (response.status == 200) {
-      showAlert(`Successful container ${action}.`);
-    }
-  }
-}
-
-/**
- * A wrapper for the /images API call that URI encodes the image tag.
- * @param {string} action, one of: pull, prune.
- * @param {string} imageTag, in the format name:tag. (e.g. debian:lite)
- */
-async function imageControl(action, imageTag) {
-  if (action == 'pull') {
-    let encodedImageTag = encodeURIComponent(imageTag);
-    let response = await fetch(`/images/pull/${encodedImageTag}`, { method: 'POST' });
-    if (response.status == 200) {
-      showAlert(`Successful image ${action}.`);
-    }
-  }
-  if (action == 'prune') {
-    let response = await fetch('/images/prune', { method: 'POST' });
-    if (response.status == 200) {
-      showAlert(`Successful image ${action}.`);
-    }
-  }
-}
-
-/**
- * A wrapper for the /stacks up, down, restart API calls.
- * @param {string} action, one of: start, stop, restart.
- * @param {string} containerId, the uuid of the container.
- */
-async function stackControl(action, stackName) {
-  if (action == 'git-pull') {
-    let response = await fetch(`/stacks/git/pull`);
-    if (response.status == 200) {
-      showAlert(`Successful stack ${action}.`);
-    }
-  }
-  else {
-    console.log(`docker-compose ${stackName} ${action}`);
-    let response = await fetch(`/stacks/${stackName}/${action}`, { method: 'POST' });
-    if (response.status == 200) {
-      showAlert(`Successful stack ${action}.`);
-    }
-  }
-}
-
 
 /**
  * Retrieve data from the /containers API call and format as HTML for viewing. 
