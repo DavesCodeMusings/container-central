@@ -72,6 +72,10 @@ img {
   font-weight: bold;
 }
 
+nav img {
+  margin-right: 0.5em;
+}
+
 /* Colapse menu labels in mobile portrait mode. */
 nav .label {
   display: none;
@@ -111,10 +115,6 @@ textarea[readonly] {
 @media (min-width: 960px) {
   nav span, nav .label {
     display: inline;
-  }
-
-  nav img {
-    margin-right: 0.5em;
   }
 
   main {
