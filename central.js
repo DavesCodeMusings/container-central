@@ -104,6 +104,36 @@ app.get('/stacks', (req, res) => {
   res.send(JSON.stringify(stackInfo, null, 2));
 });
 
+app.get('/stacks/git/pull', (req, res) => {
+  let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  if (!config.gitUrl) {
+    res.status(404);
+    res.json('Not configured.');
+    console.error(`404 ${ip} /stacks/git/pull\ngitUrl is not configured in ${configFile}`);
+  }
+  else if (!fs.existsSync(composeDirectory)) {
+    res.status(404);
+    res.json('No such directory.');
+    console.error(`404 ${ip} /stacks/git/pull\nCannot find compose YAML directory: ${composeDirectory}`);
+  }
+  else if (!fs.existsSync(`${composeDirectory}/.git`)) {
+    res.status(404);
+    res.json('No repository.');
+    console.error(`404 ${ip} /stacks/git/pull\nCannot find git repository info: ${composeDirectory}/.git`);
+  }
+  else {
+    exec(`git pull`, { cwd: composeDirectory }, (err, stdout, stderr) => {
+      if (err) {
+        console.error(`500 ${ip} /stacks/git/pull\n${stderr}`);
+      }
+      else {
+        console.log(`200 ${ip} /stacks/git/pull`);
+        res.json('Success');
+      }
+    });
+  }
+});
+
 app.post('/containers/:containerId/:action', (req, res) => {
   let action = req.params['action'];
 

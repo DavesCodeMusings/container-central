@@ -131,12 +131,21 @@ async function imageControl(action, imageTag) {
  * @param {string} containerId, the uuid of the container.
  */
 async function stackControl(action, stackName) {
-  console.log(`docker-compose ${stackName} ${action}`);
-  let response = await fetch(`/stacks/${stackName}/${action}`, { method: 'POST' });
-  if (response.status == 200) {
-    alert(`Successful stack ${action}.`);
+  if (action == 'git-pull') {
+    let response = await fetch(`/stacks/git/pull`);
+    if (response.status == 200) {
+      alert(`Successful stack ${action}.`);
+    }
+  }
+  else {
+    console.log(`docker-compose ${stackName} ${action}`);
+    let response = await fetch(`/stacks/${stackName}/${action}`, { method: 'POST' });
+    if (response.status == 200) {
+      alert(`Successful stack ${action}.`);
+    }
   }
 }
+
 
 /**
  * Retrieve data from the /containers API call and format as HTML for viewing. 
@@ -357,7 +366,7 @@ async function viewStacks(projectOfInterest) {
       }
     }
 
-    html += `<p><img alt="git-pull" class="control-aside" onclick="alert('Not implemented yet.');" src="icons/source-branch.svg"><p>`;
+    html += `<p><img alt="git-pull" class="control-aside" onclick="stackControl('git-pull');" src="icons/source-branch.svg"><p>`;
     document.getElementsByTagName('main')[0].innerHTML = html;
   }
   catch {
