@@ -2,11 +2,11 @@
  * Show a pop-up message similar to alert(msg) but styled with css and auto-closing.
  * @param {string} msg, the text to display. 
  */
-function showMessage(msg) {
+function showAlert(msg) {
   alertDiv = document.getElementById('alert');
   alertDiv.innerHTML = msg;
   alertDiv.style.display = 'block';
-  setTimeout(() => { alertDiv.style.display = 'none'; }, 6000);
+  setTimeout(() => { alertDiv.style.display = 'none'; }, 7000);
 }
 
 /**
@@ -90,7 +90,7 @@ async function viewInfo() {
     }
   }
   catch {
-    showMessage(`API request failed.`);
+    showAlert(`API request failed.`);
   }
 }
 
@@ -104,20 +104,20 @@ async function containerControl(action, containerId) {
     console.log(`Telling conntainer ${containerId} to ${action}`);
     switch (action) {
       case 'start':
-        showMessage('Starting container...');
+        showAlert('Starting container...');
         break;
       case 'stop':
-        showMessage('Stopping container...');
+        showAlert('Stopping container...');
         break;
     }
     let response = await fetch(`/containers/${containerId}/${action}`, { method: 'POST' });
     if (response.status == 200) {
       switch (action) {
         case 'start':
-          showMessage('Container started.');
+          showAlert('Container started.');
           break;
         case 'stop':
-          showMessage('Container stopped.');
+          showAlert('Container stopped.');
           break;
       }
     }
@@ -125,7 +125,7 @@ async function containerControl(action, containerId) {
   else {
     let response = await fetch(`/containers/${action}`, { method: 'POST' });
     if (response.status == 200) {
-      showMessage(`Successful container ${action}.`);
+      showAlert(`Successful container ${action}.`);
     }
   }
 }
@@ -140,13 +140,13 @@ async function imageControl(action, imageTag) {
     let encodedImageTag = encodeURIComponent(imageTag);
     let response = await fetch(`/images/pull/${encodedImageTag}`, { method: 'POST' });
     if (response.status == 200) {
-      showMessage(`Successful image ${action}.`);
+      showAlert(`Successful image ${action}.`);
     }
   }
   if (action == 'prune') {
     let response = await fetch('/images/prune', { method: 'POST' });
     if (response.status == 200) {
-      showMessage(`Successful image ${action}.`);
+      showAlert(`Successful image ${action}.`);
     }
   }
 }
@@ -160,14 +160,14 @@ async function stackControl(action, stackName) {
   if (action == 'git-pull') {
     let response = await fetch(`/stacks/git/pull`);
     if (response.status == 200) {
-      showMessage(`Successful stack ${action}.`);
+      showAlert(`Successful stack ${action}.`);
     }
   }
   else {
     console.log(`docker-compose ${stackName} ${action}`);
     let response = await fetch(`/stacks/${stackName}/${action}`, { method: 'POST' });
     if (response.status == 200) {
-      showMessage(`Successful stack ${action}.`);
+      showAlert(`Successful stack ${action}.`);
     }
   }
 }
@@ -266,7 +266,7 @@ async function viewContainers() {
     }
   }
   catch {
-    showMessage(`API request failed.`);
+    showAlert(`API request failed.`);
   }
 }
 
@@ -340,7 +340,7 @@ async function viewImages(tagOfInterest) {
     }
   }
   catch {
-    showMessage(`API request failed.`);
+    showAlert(`API request failed.`);
   }
 
   if (tagOfInterest) {
@@ -396,7 +396,7 @@ async function viewStacks(projectOfInterest) {
     document.getElementsByTagName('main')[0].innerHTML = html;
   }
   catch {
-    showMessage(`API request failed.`);
+    showAlert(`API request failed.`);
   }
 
   if (projectOfInterest) {
@@ -439,6 +439,6 @@ async function viewVolumes() {
     }
   }
   catch {
-    showMessage(`API request failed.`);
+    showAlert(`API request failed.`);
   }
 }

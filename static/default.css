@@ -144,10 +144,6 @@ textarea[readonly] {
 
 /* Everybody loves dark mode these days. */
 @media (prefers-color-scheme: dark) {
-  a {
-    color: deepskyblue;
-  }
-
   nav a {
     color: white;
   }
