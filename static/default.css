@@ -128,12 +128,16 @@ textarea[readonly] {
 
 /* Everybody loves dark mode these days. */
 @media (prefers-color-scheme: dark) {
+  a {
+    color: deepskyblue;
+  }
+
   nav a {
     color: white;
   }
 
   body {
-    background-color: #333333;
+    background-color: indigo;
     color: white;
   }
 
@@ -142,11 +146,11 @@ textarea[readonly] {
   }
 
   .grouping {
-    background-color: #242424;
+    background-color: darkslateblue;
   }
 
   textarea[readonly] {
-    background-color: #333333;
+    background-color: indigo;
     border: 1px solid white;
     color: lightgray;
   }  

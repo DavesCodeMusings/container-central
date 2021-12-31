@@ -244,7 +244,7 @@ async function viewImages(tagOfInterest) {
   let template = `
     <details id="{{tag}}">
       <summary><img alt="freshness indicator" src={{ageIcon}}> {{tag}}
-        <span class="popup-controls">
+        <span class="popup-controls grouping">
           <a href="javascript:imageControl('pull', '{{tag}}')" title="Pull latest image"><img alt="pull" src="icons/download.svg"></a>
         </span>
       </summary>
@@ -321,7 +321,7 @@ async function viewStacks(projectOfInterest) {
   let template = `
     <details id="{{project}}">
       <summary><img alt="stack icon" src='icons/format-list-bulleted-type.svg'> {{project}}
-        <span class="popup-controls">
+        <span class="popup-controls grouping">
           <a href="javascript:stackControl('up', '{{project}}');" title="Deploy Stack"><img alt="Up" src="icons/arrow-up-thick.svg"></a>
           <a href="javascript:stackControl('down', '{{project}}');" title="Remove Stack"><img alt="Up" src="icons/arrow-down-thick.svg"></a>
           <a href="javascript:stackControl('restart', '{{project}}');" title="Restart Stack"><img alt="Up" src="icons/arrow-u-up-right-bold.svg"></a>
