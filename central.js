@@ -106,7 +106,7 @@ app.get('/info', (req, res) => {
       let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
       console.log(`${apiRes.statusCode} ${ip} ${apiOptions.path}`);
       let info = JSON.parse(data);
-      let files = fs.readdirSync(composeDirectory);
+      let files = fs.readdirSync(composeDirectory).filter(file => file.endsWith('.yml'));
       info.stacks = files.length;
       res.setHeader("Content-Type", "application/json");
       res.send(JSON.stringify(info, null, 2));
@@ -119,7 +119,7 @@ app.get('/info', (req, res) => {
 });
 
 app.get('/stacks', (req, res) => {
-  let files = fs.readdirSync(composeDirectory);
+  let files = fs.readdirSync(composeDirectory).filter(file => file.endsWith('.yml'));
   let stackInfo = [];
   files.forEach(file => {
     let info = {
