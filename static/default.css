@@ -39,16 +39,19 @@ details > summary {
   list-style: none;
 }
 
-.controls {
+span.popup-controls {
   display: none;
 }
 
-.controls a {
-  margin-left: 0.5em;
+details[open] span.popup-controls {
+  display: inline;
 }
 
-details[open] .controls {
-  display: inline;
+.grouping {
+  background-color: whitesmoke;
+  border-radius: 10px;
+  margin-right: 1em;
+  padding: 2px 5px;
 }
 
 .control-aside {
@@ -56,7 +59,7 @@ details[open] .controls {
   float: right;
 }
 
-summary:hover > .controls {
+summary:hover > .popup-controls {
   display: inline;
 }
 
@@ -117,6 +120,10 @@ textarea[readonly] {
   main {
     min-width: 640px;  /* Makes float:right look better */
   }
+
+  br.optional {
+    display: none;
+  }
 }
 
 /* Everybody loves dark mode these days. */
@@ -132,6 +139,10 @@ textarea[readonly] {
 
   img {
     filter: invert(100%);
+  }
+
+  .grouping {
+    background-color: #242424;
   }
 
   textarea[readonly] {
