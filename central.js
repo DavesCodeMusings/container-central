@@ -184,7 +184,7 @@ app.post('/:target/prune', (req, res) => {
   }
 });
 
-app.post('/pull/:imageTag', (req, res) => {
+app.post('/images/pull/:imageTag', (req, res) => {
   let [image, tag] = req.params['imageTag'].split(':');
   let apiOptions = {
     socketPath: dockerSocket,

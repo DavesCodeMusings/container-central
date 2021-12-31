@@ -112,7 +112,7 @@ async function containerControl(action, containerId) {
 async function imageControl(action, imageTag) {
   if (action == 'pull') {
     let encodedImageTag = encodeURIComponent(imageTag);
-    let response = await fetch(`/pull/${encodedImageTag}`, { method: 'POST' });
+    let response = await fetch(`/images/pull/${encodedImageTag}`, { method: 'POST' });
     if (response.status == 200) {
       alert(`Successful image ${action}.`);
     }
@@ -357,7 +357,7 @@ async function viewStacks(projectOfInterest) {
       }
     }
 
-    html += `<p><img alt="pull" class="control-aside" onclick="alert('Not implemented yet.');" src="icons/source-branch.svg"><p>`;
+    html += `<p><img alt="git-pull" class="control-aside" onclick="alert('Not implemented yet.');" src="icons/source-branch.svg"><p>`;
     document.getElementsByTagName('main')[0].innerHTML = html;
   }
   catch {
