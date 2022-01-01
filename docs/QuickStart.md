@@ -18,17 +18,15 @@ docker run -d \
 ```
 
 ## Exploring
-Point your browser to your Pi, like this: http://mypi.home:8088 (or use the IP address.) You'll see a simple menu like this:
+Point your browser to your Pi, like this: http://mypi.home:8088 (or use the IP address.) You'll see a simple menu and an overview of your system, like this:
 
-![menu](screenshots/menu.png)
+![menu](screenshots/home.png)
 
-Things will look slightly different on mobile phones and other small screen devices, but the basic menu items are the same.
+The layout will be slightly different on mobile phones and other small screen devices, but the information displayed is the same.
 
-* Containers
-* Images
-* Stacks
-* Volumes
-* Configuration
+Underneath the information about your system resources, you'll see a status of the containers. Refering to the screenshot, you can see eleven of twelve containers are running, none are paused, and one is stopped.
+
+You can also see that there are seventeen Docker images, two Docker Compose stacks, and one Docker volume. Clicking or tapping on any of these items will take you to a more detailed view. (You can also use the menu selections on the left to do the same thing.)
 
 ### Containers
 Click or tap on containers. You will see a list of Docker containers running on the host.
