@@ -169,7 +169,7 @@ app.get('/stacks/git', (req, res) => {
     }
     if (!fs.existsSync(`${composeDirectory}/.git`)) {  // If no local repo, try to recover by doing git clone.
       console.error(`No local copy of git repository. Trying git clone ${config.gitUrl}`);
-      exec(`git clone ${config.gitUrl} .`, execOptions, (err, stdout, stderr) => {
+      exec(`git clone ${config.gitUrl} . && git config pull.ff only`, execOptions, (err, stdout, stderr) => {
         if (err) {
           console.error(`500 ${ip} /stacks/git\n${stderr}`);
           res.status(500);
