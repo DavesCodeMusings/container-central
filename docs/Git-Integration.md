@@ -57,7 +57,18 @@ If you see an error message instead, check the container logs with `docker logs`
 >fatal: unable to access 'https://local.git.server/pi/docker-compose.git/': server certificate verification failed. CAfile: none CRLfile: none
 >```
 >
->If that happens, try adding `-v /etc/ssl:/etc/ssl` to your docker run command.
+>If that happens, try adding `-v /etc/ssl:/etc/ssl` to your docker run command, like this:
+>
+>```
+>docker run -d \
+>  -p 8088:8088 \
+>  -v /var/run/docker.sock:/var/run/docker.sock \
+>  -v ${PWD}/data:/app/data \
+>  -v /etc/ssl:/etc/ssl \
+>  davescodemusings/container-central:latest
+>```
+>
+>This will make certain /etc/ssl/cert/ca-certificates.crt is available to the container. 
 
 Hopefully all goes well. As a final check, you can look inside the _data/compose_ directory and verify the files match what's in the git repository.
 
