@@ -1,6 +1,6 @@
 /**
  * Show a pop-up message similar to alert(msg) but styled with css and auto-closing.
- * @param {string} msg, the text to display. 
+ * @param {string} msg, the text to display.
  */
 function showAlert(msg) {
   alertDiv = document.getElementById('alert');
@@ -106,7 +106,7 @@ async function stackControl(action, stackName) {
       showAlert(`${stackName} ${action}`);
   }
   if (action == 'git-pull') {
-    let response = await fetch(`/stacks/git/pull`);
+    let response = await fetch(`/stacks/git`);
     if (response.status == 200) {
       showAlert('Compose files are up to date.');
     }
@@ -493,29 +493,30 @@ async function viewVolumes() {
 }
 
 async function viewConfig() {
-  let html = `<h2>Config<img alt="refresh" class="control-aside" src="icons/refresh.svg" onclick="viewConfig();"></h2>`;
+  let html = `<h2>Configuration<img alt="refresh" class="control-aside" src="icons/refresh.svg" onclick="viewConfig();"></h2>`;
   let template = `
-    <form>
+    <form action="/config" method="post">
       <fieldset>
         <legend>Git Integration</legend>
-        <label for="gitUrl">Clone URL:</label>
-        <input id="gitUrl" type="url" placeholder="https://git.mypi.home/pi/compose.git" value="{{gitUrl}}">
+        <label for="gitUrl">Repository URL:</label>
+        <input id="gitUrl" name="gitUrl" type="url" placeholder="https://git.mypi.home/pi/compose.git" value="{{gitUrl}}">
         <br>
-        <label for="ssl-no-verify">Skip SSL Verification:</label> <input id="ssl-no-verify" type="checkbox" value="sslNoVerify">
+        <label for="git-no-verify-ssl">Skip SSL Verification:</label> <input id="git-no-verify-ssl" name="gitNoVerifySSL" type="checkbox" value="true">
       </fieldset>
 
       <fieldset>
         <legend>Server</legend>
         <label for="listenPort">Listen port:</label>
-        <input id="listenPort" type="number" placeholder="8088" value="{{listenPort}}">
+        <input id="listenPort" name="listenPort" type="number" placeholder="8088" value="{{listenPort}}">
+        <br>
+        <i>Changes here require an application restart to take effect.</i>
       </fieldset>
       <br>
-      <i>Changes here require a restart to take effect.</i>
       <input type="submit" value="Save">
     </form>
   `;
   
-  console.log(`Fetching config info from ${window.location.origin}/config`);
+  console.log(`Fetching configuration from ${window.location.origin}/config`);
   try {
     let configResponse = await fetch(window.location.origin + '/config');
     if (configResponse.status != 200) {
@@ -526,10 +527,14 @@ async function viewConfig() {
 
       html += template.replace(/{{\w+}}/g, (match) => {
         let property = match.replace(/^{{/, '').replace(/}}$/, '');
-        return configData[property];
+        let value = configData[property] || '';  // undefined becomes an empty string
+        return value;
       });
 
       document.getElementsByTagName('main')[0].innerHTML = html;
+      if (configData.gitNoVerifySSL) {
+        document.getElementById('git-no-verify-ssl').checked = true;
+      }
     }
   }
   catch {

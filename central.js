@@ -19,11 +19,21 @@ catch (ex) {
   console.error(`Unable to parse ${configFile}\n${ex}\nUsing default values instead.`);
 }
 
-const dockerSocket = '/var/run/docker.sock';
+/* Add defaults for any values not set */
+config.gitNoVerifySSL = config.gitNoVerifySSL || false;
+config.listenPort = config.listenPort || '8088';
+
 const composeBinary = '/usr/local/bin/docker-compose';
-const composeDirectory = config.composeDirectory || path.join(__dirname, 'data', 'compose');
-const gitNoVerifySSL = config.gitNoVerifySSL || false;
-const listenPort = config.listenPort || '8088';
+const composeDirectory = path.join(__dirname, 'data', 'compose');
+const dockerSocket = '/var/run/docker.sock';
+
+/* Many things rely on the compose files directory being present. */
+fs.stat(composeDirectory, (err, stat) => {
+  if (err) {
+    console.log(`Creating missing directory: ${composeDirectory}`);
+    fs.mkdirSync(composeDirectory);
+  }
+});
 
 /**
  * Callback function used for Docker API GET requests.
@@ -56,8 +66,7 @@ function callAPI(req, res) {
     apiRes.on('end', () => {
       let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
       console.log(`${apiRes.statusCode} ${ip} ${apiOptions.path}`);
-      res.setHeader("Content-Type", "application/json");
-      res.send(data);
+      res.json(data);
     });
   });
   apiReq.on('error', err => {
@@ -67,6 +76,7 @@ function callAPI(req, res) {
 }
 
 const app = express();
+app.use(express.urlencoded({extended: true}));
 
 /* Static content for the web client. */
 app.get('/', (req, res) => {
@@ -111,44 +121,74 @@ app.get('/config', (req, res) => {
   res.json(config);
 });
 
-app.get('/stacks/git/pull', (req, res) => {
+app.post('/config', (req, res) => {
+  let proposedConfig = req.body;
+  let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  console.log(`${ip} POST /config ${JSON.stringify(proposedConfig)}`);
+
+  if (proposedConfig.gitUrl === 'undefined') {  // use empty string, not undefined
+    config.gitUrl == '';
+  }
+  else {
+    config.gitUrl = proposedConfig.gitUrl;
+  }
+
+  if (proposedConfig.gitNoVerifySSL == 'true') {  // use boolean, not string
+    config.gitNoVerifySSL = true;
+  }
+  else {
+    config.gitNoVerifySSL = false;
+  }
+
+  if (proposedConfig.listenPort) {  // use integer, not string
+    config.listenPort = parseInt(proposedConfig.listenPort);
+  }
+
+  console.log(JSON.stringify(config, null, 2));
+  fs.writeFileSync(configFile, JSON.stringify(config, null, 2));
+  res.redirect('/');
+});
+
+app.get('/stacks/git', (req, res) => {
   let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
   if (!config.gitUrl) {
     res.status(404);
     res.json('URL not configured.');
-    console.error(`404 ${ip} /stacks/git/pull\ngitUrl is not configured in ${configFile}`);
+    console.error(`404 ${ip} /stacks/git\ngitUrl is not configured in ${configFile}`);
   }
   else if (!fs.existsSync(composeDirectory)) {
     res.status(404);
     res.json('No such directory.');
-    console.error(`404 ${ip} /stacks/git/pull\nCannot find compose YAML directory: ${composeDirectory}`);
+    console.error(`404 ${ip} /stacks/git\nCannot find compose YAML directory: ${composeDirectory}`);
   }
   else {  // All the prerequisites have checked out.
     let execOptions = { cwd: composeDirectory };
-    if (gitNoVerifySSL) {
+    if (config.gitNoVerifySSL) {
       execOptions['env'] = { 'GIT_SSL_NO_VERIFY': true };
     }
     if (!fs.existsSync(`${composeDirectory}/.git`)) {  // If no local repo, try to recover by doing git clone.
       console.error(`No local copy of git repository. Trying git clone ${config.gitUrl}`);
       exec(`git clone ${config.gitUrl} .`, execOptions, (err, stdout, stderr) => {
         if (err) {
-          console.error(`500 ${ip} /stacks/git/pull\n${stderr}`);
-          res.json('git pull failed.');
+          console.error(`500 ${ip} /stacks/git\n${stderr}`);
+          res.status(500);
+          res.json('git clone failed.');
         }
         else {
-          console.log(`200 ${ip} /stacks/git/pull`);
-          res.json('git pull successful.');
+          console.log(`200 ${ip} /stacks/git`);
+          res.json('git clone successful.');
         }
       });
     }
     else {
       exec(`git pull`, execOptions, (err, stdout, stderr) => {
         if (err) {
-          console.error(`500 ${ip} /stacks/git/pull\n${stderr}`);
+          console.error(`500 ${ip} /stacks/git\n${stderr}`);
+          res.status(500);
           res.json('git pull failed.');
         }
         else {
-          console.log(`200 ${ip} /stacks/git/pull`);
+          console.log(`200 ${ip} /stacks/git`);
           res.json('git pull successful.');
         }
       });
@@ -225,7 +265,7 @@ app.post('/:target/prune', (req, res) => {
       apiReq.on('error', err => {
         console.error(err);
         console.log(data);
-        res.status(apiRes.statusCode);
+        res.status(500);
         res.send('"error"');
       });
       apiReq.end();
@@ -313,7 +353,7 @@ app.post('/stacks/:stackName/:action', (req, res) => {
   }
 });
 
-var server = app.listen(listenPort, '0.0.0.0', () => {
+var server = app.listen(config.listenPort, '0.0.0.0', () => {
   let addr = server.address().address;
   let port = server.address().port;
   console.log(`Listening on ${addr}:${port}.`);
