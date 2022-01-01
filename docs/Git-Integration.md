@@ -13,8 +13,7 @@ The most basic docker run command for Container Central uses the default configu
 
 ```
 {
-  "composeDirectory": "/home/pi/compose-files",
-  "gitUrl": "https://git.mypi.home/pi/compose-files.git",
+  "gitUrl": "https://git.mypi.home/pi/compose-files.git"
 }
 ```
 
@@ -29,7 +28,6 @@ docker run -d \
   -p 8088:8088 \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -v config.json:/app/config.json \
-  -v ${PWD}/compose-files:/app/compose \
   davescodemusings/container-central:latest
 ```
 
