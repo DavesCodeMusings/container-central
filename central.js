@@ -87,11 +87,10 @@ app.get('/script.js', (req, res) => {
 });
 
 
-/* API routes */
+/* API routes for main menu items */
 app.get('/containers', callAPI);
 app.get('/images', callAPI);
 app.get('/info', callAPI);
-app.get('/volumes', callAPI);
 
 app.get('/stacks', (req, res) => {
   let files = fs.readdirSync(composeDirectory).filter(file => file.endsWith('.yml'));
@@ -105,6 +104,11 @@ app.get('/stacks', (req, res) => {
   });
   res.setHeader("Content-Type", "application/json");
   res.send(JSON.stringify(stackInfo, null, 2));
+});
+
+app.get('/volumes', callAPI);
+app.get('/config', (req, res) => {
+  res.json(config);
 });
 
 app.get('/stacks/git/pull', (req, res) => {

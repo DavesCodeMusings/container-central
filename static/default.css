@@ -31,10 +31,10 @@ body {
 }
 
 details > p {
-  margin-left: 2em;
-  margin-top: 0;
   font-size: 12pt;
   line-height: 120%;
+  margin-left: 2em;
+  margin-top: 0;
 }
 
 details > summary {
@@ -52,6 +52,39 @@ span.popup-controls {
 
 details[open] span.popup-controls {
   display: inline;
+}
+
+form fieldset {
+  border: 1px solid;
+  border-radius: 5px;
+}
+
+form input, form submit {
+  border: 1px solid gray;
+  border-radius: 5px;
+  font-size: 16pt;
+  padding: 2px 0.2em;
+}
+
+form input[type="checkbox"] {
+  height: 16pt;
+  width: 16pt;
+}
+
+form input[type="number"] {
+  width: 5em;
+}
+
+form input[type="submit"] {
+  float: right;
+}
+
+form input[type="url"] {
+  width: 100%;
+}
+
+form ::placeholder {
+  font-style: italic;
 }
 
 .grouping {
@@ -153,12 +186,17 @@ textarea[readonly] {
     color: white;
   }
 
-  img {
-    filter: invert(100%);
+  form input {
+    background-color: darkslateblue;
+    color: whitesmoke;
   }
 
   .grouping {
     background-color: darkslateblue;
+  }
+
+  img {
+    filter: invert(100%);
   }
 
   textarea[readonly] {

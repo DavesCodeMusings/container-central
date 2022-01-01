@@ -491,3 +491,48 @@ async function viewVolumes() {
     showAlert(`API request failed.`);
   }
 }
+
+async function viewConfig() {
+  let html = `<h2>Config<img alt="refresh" class="control-aside" src="icons/refresh.svg" onclick="viewConfig();"></h2>`;
+  let template = `
+    <form>
+      <fieldset>
+        <legend>Git Integration</legend>
+        <label for="gitUrl">Clone URL:</label>
+        <input id="gitUrl" type="url" placeholder="https://git.mypi.home/pi/compose.git" value="{{gitUrl}}">
+        <br>
+        <label for="ssl-no-verify">Skip SSL Verification:</label> <input id="ssl-no-verify" type="checkbox" value="sslNoVerify">
+      </fieldset>
+
+      <fieldset>
+        <legend>Server</legend>
+        <label for="listenPort">Listen port:</label>
+        <input id="listenPort" type="number" placeholder="8088" value="{{listenPort}}">
+      </fieldset>
+      <br>
+      <i>Changes here require a restart to take effect.</i>
+      <input type="submit" value="Save">
+    </form>
+  `;
+  
+  console.log(`Fetching config info from ${window.location.origin}/config`);
+  try {
+    let configResponse = await fetch(window.location.origin + '/config');
+    if (configResponse.status != 200) {
+      console.log(`${configResponse.status} received while fetching ${window.location.origin}/config`);
+    }
+    else {
+      let configData = await configResponse.json();
+
+      html += template.replace(/{{\w+}}/g, (match) => {
+        let property = match.replace(/^{{/, '').replace(/}}$/, '');
+        return configData[property];
+      });
+
+      document.getElementsByTagName('main')[0].innerHTML = html;
+    }
+  }
+  catch {
+    showAlert(`API request failed.`);
+  }
+}
