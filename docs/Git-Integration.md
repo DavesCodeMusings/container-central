@@ -68,7 +68,7 @@ If you see an error message instead, check the container logs with `docker logs`
 >  davescodemusings/container-central:latest
 >```
 >
->This will make certain /etc/ssl/cert/ca-certificates.crt is available to the container. 
+>This will make certain /etc/ssl/cert/ca-certificates.crt is available to the container so git can verify the SSL certificate issuer. 
 
 Hopefully all goes well. As a final check, you can look inside the _data/compose_ directory and verify the files match what's in the git repository.
 
