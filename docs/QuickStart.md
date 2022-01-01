@@ -10,6 +10,7 @@ Then, start the container with a bind mount for _data_.
 ```
 mkdir data
 docker run -d \
+  --name container-central \
   -p 8088:8088 \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -v ${PWD}/data:/app/data \
