@@ -21,7 +21,7 @@ In the example above, the git server is hosted locally and the clone URL is http
 
 Create a directory called _data_ when you can store _config.json_. Then create an empty directory called _compose_ under _data_ for storing the Docker Compose files.
 
-When you're done it should look like this:
+When you're done the _data_ directory should look like this:
 
 ```
 $ ls -RF data
