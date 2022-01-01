@@ -41,13 +41,18 @@ docker run -d \
   davescodemusings/container-central:latest
 ```
 
-## Pull the repository using the Stacks menu
-1. Open Container Central in a web browser.
-2. Select the Stacks menu.
-3. Find the code branch icon on the righthand side and tap it.
-4. Look for error messages in the browser window and the container logs.
+Open Container Central in a web browser to make sure everything is working as expected. If anything is not right, use the `docker logs` command for the container to get additional information to help you troubleshoot.
 
-Hopefully, there are no error messages and everything is working as expected. If you see errors in th browser window, you can get more detail by using `docker logs` to examine the container logs for Container Central.
+## Pull the repository using the Stacks menu
+Once Container Central is running as a Docker container, you can test the git integration.
+
+1. Select the Stacks menu.
+2. Find the code branch icon on the righthand side and tap or click it.
+3. Watch for a pop-up alert that says, "Compose files are up to date," and a listing of compose projects on the Stacks page.
+
+If you see an error message instead, check the container logs with `docker logs` to get more detailed information.
+
+Hopefully all went well. As a final check, you can look inside the _data/compose_ directory and verify the files match what's in the git repository.
 
 ## Maintaining your Docker Compose files
 Any changes made to files should be pushed to the git repository. Then, from Container Central's Stacks menu, click or tap the branch icon to pull the latest versions.
