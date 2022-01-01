@@ -19,15 +19,25 @@ The most basic docker run command for Container Central uses the default configu
 
 In the example above, the git server is hosted locally and the clone URL is https://git.mypi.home/pi/docker-compose.git. You could also use a public git server, like GitHub or GitLab. Just copy the _Clone with HTTP_ link and use it to define "gitURL" in the config.json file.
 
-You may also want to redefine the directory that stores the Docker Compose files locally. This is done with "composeDirectory". (If you don't specify "composeDirectory", the files will reside inside the container in /app/compose.)
+Create a directory called _data_ when you can store _config.json_. Then create an empty directory called _compose_ under _data_ for storing the Docker Compose files.
 
-Now, start the container with a bind mount for config.json and the compose files directory, like this:
+When you're done it should look like this:
+
+```
+ls -RF data
+data:
+compose/  config.json
+
+data/compose:
+```
+
+Now, start the container with a bind mount for _data_, like this:
 
 ```
 docker run -d \
   -p 8088:8088 \
   -v /var/run/docker.sock:/var/run/docker.sock \
-  -v config.json:/app/config.json \
+  -v ${PWD}/data:/app/data \
   davescodemusings/container-central:latest
 ```
 
@@ -38,5 +48,6 @@ docker run -d \
 4. Look for error messages in the browser window and the container logs.
 
 Hopefully, there are no error messages and everything is working as expected. If you see errors in th browser window, you can get more detail by using `docker logs` to examine the container logs for Container Central.
+
 ## Maintaining your Docker Compose files
 Any changes made to files should be pushed to the git repository. Then, from Container Central's Stacks menu, click or tap the branch icon to pull the latest versions.
