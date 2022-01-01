@@ -24,7 +24,7 @@ Create a directory called _data_ when you can store _config.json_. Then create a
 When you're done it should look like this:
 
 ```
-ls -RF data
+$ ls -RF data
 data:
 compose/  config.json
 
