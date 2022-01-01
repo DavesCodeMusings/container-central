@@ -17,7 +17,7 @@ The most basic docker run command for Container Central uses the default configu
 }
 ```
 
-In the example above, the git server is hosted locally and the clone URL is https://git.mypi.home/pi/docker-compose.git. You could also use a public git server, like GitHub or GitLab. Just copy the _Clone with HTTP_ link and use it to define "gitURL" in the config.json file.
+In the example above, the git server is hosted locally and the clone URL is https://git.mypi.home/pi/compose-files.git. You could also use a public git server, like GitHub or GitLab. Just copy the _Clone with HTTP_ link and use it to define "gitURL" in the config.json file.
 
 Create a directory called _data_ when you can store _config.json_. Then create an empty directory called _compose_ under _data_ for storing the Docker Compose files.
 
