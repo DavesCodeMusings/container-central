@@ -66,7 +66,8 @@ function callAPI(req, res) {
     apiRes.on('end', () => {
       let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
       console.log(`${apiRes.statusCode} ${ip} ${apiOptions.path}`);
-      res.json(data);
+      res.setHeader("Content-Type", "application/json");
+      res.send(data);
     });
   });
   apiReq.on('error', err => {
