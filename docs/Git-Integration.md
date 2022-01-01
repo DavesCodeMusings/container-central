@@ -52,7 +52,14 @@ Once Container Central is running as a Docker container, you can test the git in
 
 If you see an error message instead, check the container logs with `docker logs` to get more detailed information.
 
-Hopefully all went well. As a final check, you can look inside the _data/compose_ directory and verify the files match what's in the git repository.
+>If you're trying to pull from a locally-hosted git server using https, you may see this message in the container logs:
+>```
+>fatal: unable to access 'https://local.git.server/pi/docker-compose.git/': server certificate verification failed. CAfile: none CRLfile: none
+>```
+>
+>If that happens, try adding `-v /etc/ssl:/etc/ssl` to your docker run command.
+
+Hopefully all goes well. As a final check, you can look inside the _data/compose_ directory and verify the files match what's in the git repository.
 
 ## Maintaining your Docker Compose files
 Any changes made to files should be pushed to the git repository. Then, from Container Central's Stacks menu, click or tap the branch icon to pull the latest versions.
