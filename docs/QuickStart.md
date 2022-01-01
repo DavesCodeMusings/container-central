@@ -1,13 +1,18 @@
 # Container Central Quick Start
 
 ## Running
-On Raspberry Pi, the easiest way to run Container Central is to use a docker run command like this:
+On Raspberry Pi, the easiest way to run Container Central is to use the Docker container.
+
+First, create a _data_ directory to store Container Central's persistent settings.
+
+Then, start the container with a bind mount for _data_.
 
 ```
+mkdir data
 docker run -d \
-  --name container-central \
   -p 8088:8088 \
   -v /var/run/docker.sock:/var/run/docker.sock \
+  -v ${PWD}/data:/app/data \
   davescodemusings/container-central:latest
 ```
 
@@ -22,6 +27,7 @@ Things will look slightly different on mobile phones and other small screen devi
 * Images
 * Stacks
 * Volumes
+* Configuration
 
 ### Containers
 Click or tap on containers. You will see a list of Docker containers running on the host.
@@ -60,6 +66,9 @@ _There is a git integration planned as an enhancement._
 
 ### Volumes
 Select volumes to view Docker Volume information as if you had typed `docker volume ls` from the command-line. It's not very exciting, so there's no screenshot.
+
+### Configuration
+This is where you can enter site specific settings, like the URL for the git repository you use to store your Docker Compose files.
 
 ## Next Steps
 For a more in-depth look at how to use Container Central, see the [HowTo docuument](HowTo.md)
