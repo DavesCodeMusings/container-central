@@ -108,7 +108,7 @@ async function stackControl(action, stackName) {
   if (action == 'git-pull') {
     let response = await fetch(`/stacks/git/pull`);
     if (response.status == 200) {
-      showAlert('Compose files up to date.');
+      showAlert('Compose files are up to date.');
     }
     else {
       let msg = await response.text();

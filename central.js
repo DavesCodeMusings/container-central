@@ -10,7 +10,7 @@ const fs = require('fs');
 const path = require('path');
 const http = require('http');
 
-const configFile = path.join(__dirname, '/config.json');
+const configFile = path.join(__dirname, 'data', 'config.json');
 var config = {};
 try {
   config = JSON.parse(fs.readFileSync(configFile, 'utf-8'));
@@ -21,7 +21,8 @@ catch (ex) {
 
 const dockerSocket = '/var/run/docker.sock';
 const composeBinary = '/usr/local/bin/docker-compose';
-const composeDirectory = config.composeDirectory || path.join(__dirname, '/compose');
+const composeDirectory = config.composeDirectory || path.join(__dirname, 'data', 'compose');
+const gitNoVerifySSL = config.gitNoVerifySSL || false;
 const listenPort = config.listenPort || '8088';
 
 /**
@@ -118,30 +119,36 @@ app.get('/stacks/git/pull', (req, res) => {
     res.json('No such directory.');
     console.error(`404 ${ip} /stacks/git/pull\nCannot find compose YAML directory: ${composeDirectory}`);
   }
-  else if (!fs.existsSync(`${composeDirectory}/.git`)) {  // If no local repo, try to recover by doing git clone.
-    console.error(`No local copy of git repository. Trying git clone ${config.gitUrl}`);
-    exec(`git clone ${config.gitUrl} .`, { cwd: composeDirectory }, (err, stdout, stderr) => {
-      if (err) {
-        console.error(`500 ${ip} /stacks/git/pull\n${stderr}`);
-        res.json('git pull failed.');
-      }
-      else {
-        console.log(`200 ${ip} /stacks/git/pull`);
-        res.json('git pull successful.');
-      }
-    });
-  }
-  else {
-    exec(`git pull`, { cwd: composeDirectory }, (err, stdout, stderr) => {
-      if (err) {
-        console.error(`500 ${ip} /stacks/git/pull\n${stderr}`);
-        res.json('git pull failed.');
-      }
-      else {
-        console.log(`200 ${ip} /stacks/git/pull`);
-        res.json('git pull successful.');
-      }
-    });
+  else {  // All the prerequisites have checked out.
+    let execOptions = { cwd: composeDirectory };
+    if (gitNoVerifySSL) {
+      execOptions['env'] = { 'GIT_SSL_NO_VERIFY': true };
+    }
+    if (!fs.existsSync(`${composeDirectory}/.git`)) {  // If no local repo, try to recover by doing git clone.
+      console.error(`No local copy of git repository. Trying git clone ${config.gitUrl}`);
+      exec(`git clone ${config.gitUrl} .`, execOptions, (err, stdout, stderr) => {
+        if (err) {
+          console.error(`500 ${ip} /stacks/git/pull\n${stderr}`);
+          res.json('git pull failed.');
+        }
+        else {
+          console.log(`200 ${ip} /stacks/git/pull`);
+          res.json('git pull successful.');
+        }
+      });
+    }
+    else {
+      exec(`git pull`, execOptions, (err, stdout, stderr) => {
+        if (err) {
+          console.error(`500 ${ip} /stacks/git/pull\n${stderr}`);
+          res.json('git pull failed.');
+        }
+        else {
+          console.log(`200 ${ip} /stacks/git/pull`);
+          res.json('git pull successful.');
+        }
+      });
+    }
   }
 });
 
