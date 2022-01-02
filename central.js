@@ -65,7 +65,7 @@ function callAPI(req, res) {
     });
     apiRes.on('end', () => {
       let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-      console.log(`${apiRes.statusCode} ${ip} ${apiOptions.path}`);
+      console.info(`${apiRes.statusCode} ${ip} ${apiOptions.path}`);
       res.setHeader("Content-Type", "application/json");
       res.send(data);
     });
@@ -125,7 +125,7 @@ app.get('/config', (req, res) => {
 app.post('/config', (req, res) => {
   let proposedConfig = req.body;
   let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-  console.log(`${ip} POST /config ${JSON.stringify(proposedConfig)}`);
+  console.info(`${ip} POST /config ${JSON.stringify(proposedConfig)}`);
 
   if (proposedConfig.gitUrl === 'undefined') {  // use empty string, not undefined
     config.gitUrl == '';
@@ -145,8 +145,6 @@ app.post('/config', (req, res) => {
     config.listenPort = parseInt(proposedConfig.listenPort);
   }
 
-  console.log(JSON.stringify(config, null, 2));
-  fs.writeFileSync(configFile, JSON.stringify(config, null, 2));
   res.redirect('/');
 });
 
@@ -176,7 +174,7 @@ app.get('/stacks/git', (req, res) => {
           res.json('git clone failed.');
         }
         else {
-          console.log(`200 ${ip} /stacks/git`);
+          console.info(`200 ${ip} /stacks/git`);
           res.json('git clone successful.');
         }
       });
@@ -189,7 +187,7 @@ app.get('/stacks/git', (req, res) => {
           res.json('git pull failed.');
         }
         else {
-          console.log(`200 ${ip} /stacks/git`);
+          console.info(`200 ${ip} /stacks/git`);
           res.json('git pull successful.');
         }
       });
@@ -215,7 +213,7 @@ app.post('/containers/:containerId/:action', (req, res) => {
       });
       apiRes.on('end', () => {
         let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-        console.log(`${apiRes.statusCode} ${ip} ${apiOptions.path}`);
+        console.info(`${apiRes.statusCode} ${ip} ${apiOptions.path}`);
         let message = '';
         switch (apiRes.statusCode) {
           case 204:
@@ -258,14 +256,14 @@ app.post('/:target/prune', (req, res) => {
         });
         apiRes.on('end', () => {
           let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-          console.log(`${apiRes.statusCode} ${ip} ${apiOptions.path}`);
+          console.info(`${apiRes.statusCode} ${ip} ${apiOptions.path}`);
           res.status(apiRes.statusCode);
           res.send('"success"');  // JSON is expected by the client, so extra quoting is required.
         });
       });
       apiReq.on('error', err => {
         console.error(err);
-        console.log(data);
+        console.error(data);
         res.status(500);
         res.send('"error"');
       });
@@ -292,7 +290,7 @@ app.post('/images/pull/:imageTag', (req, res) => {
     });
     apiRes.on('end', () => {
       let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-      console.log(`${apiRes.statusCode} ${ip} ${apiOptions.path}`);
+      console.info(`${apiRes.statusCode} ${ip} ${apiOptions.path}`);
       res.status(apiRes.statusCode);
       res.setHeader("Content-Type", "application/json");
       res.send(JSON.stringify(data, null, 2));

@@ -173,11 +173,11 @@ async function stackControl(action, stackName) {
   `;
 
   // Docker Compose "stacks" are not part of the /info API call.
-  console.log(`Fetching stacks from ${window.location.origin}/stacks`);
+  console.info(`Fetching stacks from ${window.location.origin}/stacks`);
   let numStacks = 0;
   let stacksResponse = await fetch(window.location.origin + '/stacks');
   if (stacksResponse.status != 200) {
-    console.log(`${stacksResponse.status} received while fetching ${window.location.origin}/stacks`);
+    console.error(`${stacksResponse.status} received while fetching ${window.location.origin}/stacks`);
   }
   else {
     let stacksInfo = await stacksResponse.json();
@@ -185,11 +185,11 @@ async function stackControl(action, stackName) {
   }
 
   // A count of volumes is not included in /info and muct be gathered separately.
-  console.log(`Fetching volumes from ${window.location.origin}/volumes`);
+  console.info(`Fetching volumes from ${window.location.origin}/volumes`);
   let numVolumes = 0;
   let volumesResponse = await fetch(window.location.origin + '/volumes');
   if (volumesResponse.status != 200) {
-    console.log(`${volumesResponse.status} received while fetching ${window.location.origin}/volumes`);
+    console.error(`${volumesResponse.status} received while fetching ${window.location.origin}/volumes`);
   }
   else {
     let volumesInfo = await volumesResponse.json();
@@ -197,11 +197,11 @@ async function stackControl(action, stackName) {
   }
 
   // All of the other information comes from /info.
-  console.log(`Fetching info from ${window.location.origin}/info`);
+  console.info(`Fetching info from ${window.location.origin}/info`);
   try {
     let infoResponse = await fetch(window.location.origin + '/info');
     if (infoResponse.status != 200) {
-      console.log(`${infoResponse.status} received while fetching ${window.location.origin}/info`);
+      console.error(`${infoResponse.status} received while fetching ${window.location.origin}/info`);
     }
     else {
       let info = await infoResponse.json();
@@ -248,26 +248,26 @@ async function viewContainers() {
   // Image IDs are referenced in container. Fetching image data allows more friendly image tags.
   // But it's not critical, so failure to retrieve is not fatal.
   let imageData = [];
-  console.log(`Fetching image info from ${window.location.origin}/images`);
+  console.info(`Fetching image info from ${window.location.origin}/images`);
   try {
     let imagesResponse = await fetch(window.location.origin + '/images');
     if (imagesResponse.status != 200) {
-      console.log(`${imagesResponse.status} received while fetching ${window.location.origin}/images`);
+      console.error(`${imagesResponse.status} received while fetching ${window.location.origin}/images`);
     }
     else {
       imageData = await imagesResponse.json();
-      console.log(`${imageData.length} image(s) retrieved.`);
+      console.debug(`${imageData.length} image(s) retrieved.`);
     }
 
-    console.log(`Fetching container info from ${window.location.origin}/containers`);
+    console.info(`Fetching container info from ${window.location.origin}/containers`);
     let containersResponse = await fetch(window.location.origin + '/containers');
     if (containersResponse.status != 200) {
-      console.log(`${containersResponse.status} received while fetching ${window.location.origin}/containers`);
+      console.error(`${containersResponse.status} received while fetching ${window.location.origin}/containers`);
       html += `<p>API error ${containersResponse.status}</p>`;
     }
     else {
       let containerData = await containersResponse.json();
-      console.log(`${containerData.length} container(s) retrieved.`);
+      console.debug(`${containerData.length} container(s) retrieved.`);
 
       let anyStopped = 0;
       containerData.forEach(container => {
@@ -340,16 +340,16 @@ async function viewImages(tagOfInterest) {
     </details>
   `;
 
-  console.log(`Fetching image info from ${window.location.origin}/images`);
+  console.info(`Fetching image info from ${window.location.origin}/images`);
   try {
     let imagesResponse = await fetch(window.location.origin + '/images');
     if (imagesResponse.status != 200) {
-      console.log(`${imagesResponse.status} received while fetching ${window.location.origin}/images`);
+      console.error(`${imagesResponse.status} received while fetching ${window.location.origin}/images`);
       html += `<p>API error ${imagesResponse.status}</p>`;
     }
     else {
       let imageData = await imagesResponse.json();
-      console.log(`${imageData.length} image(s) retrieved.`);
+      console.debug(`${imageData.length} image(s) retrieved.`);
 
       let now = new Date();  // Used as a baseline to calculate image age.
       let anyUnused = 0;
@@ -415,15 +415,15 @@ async function viewStacks(projectOfInterest) {
     </details>
   `;
 
-  console.log(`Fetching stack info from ${window.location.origin}/stacks`);
+  console.info(`Fetching stack info from ${window.location.origin}/stacks`);
   try {
     let stacksResponse = await fetch(window.location.origin + '/stacks');
     if (stacksResponse.status != 200) {
-      console.log(`${stacksResponse.status} received while fetching ${window.location.origin}/stacks`);
+      console.error(`${stacksResponse.status} received while fetching ${window.location.origin}/stacks`);
     }
     else {
       let stackData = await stacksResponse.json();
-      console.log(`${stackData.length} stack(s) retrieved.`);
+      console.debug(`${stackData.length} stack(s) retrieved.`);
 
       if (stackData.length == 0) {
         html += `<p>No stacks defined.</p>`;
@@ -468,15 +468,15 @@ async function viewVolumes() {
     </details>
   `;
 
-  console.log(`Fetching volume info from ${window.location.origin}/volumes`);
+  console.info(`Fetching volume info from ${window.location.origin}/volumes`);
   try {
     let volumesResponse = await fetch(window.location.origin + '/volumes');
     if (volumesResponse.status != 200) {
-      console.log(`${volumesResponse.status} received while fetching ${window.location.origin}/volumes`);
+      console.error(`${volumesResponse.status} received while fetching ${window.location.origin}/volumes`);
     }
     else {
       let volumeData = await volumesResponse.json();
-      console.log(`${volumeData.Volumes.length} volume(s) retrieved.`);
+      console.debug(`${volumeData.Volumes.length} volume(s) retrieved.`);
       volumeData.Volumes.forEach(volume => {
         volume.timeStamp = new Date(volume.CreatedAt).toLocaleString();
         html += template.replace(/{{\w+}}/g, (match) => {
@@ -516,11 +516,11 @@ async function viewConfig() {
     </form>
   `;
   
-  console.log(`Fetching configuration from ${window.location.origin}/config`);
+  console.info(`Fetching configuration from ${window.location.origin}/config`);
   try {
     let configResponse = await fetch(window.location.origin + '/config');
     if (configResponse.status != 200) {
-      console.log(`${configResponse.status} received while fetching ${window.location.origin}/config`);
+      console.error(`${configResponse.status} received while fetching ${window.location.origin}/config`);
     }
     else {
       let configData = await configResponse.json();
