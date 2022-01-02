@@ -12,7 +12,7 @@ I'm running a single Raspberry Pi in my home. I trust my users. I have no need f
 ## How can I use it?
 Get the [Docker image](https://hub.docker.com/r/davescodemusings/container-central) and run it. This is probably the easiest method.
 
-There is a [Quick Start](docs/QuickStart.md) document to get you up and going quickly.
+There is a [Quick Start](docs/QuickStart.md) document to get you up and going with minimal hassle.
 
 When you're done with that, take a look at the [other docs](docs/) to explore more features of Container Central.
 
