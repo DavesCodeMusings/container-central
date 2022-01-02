@@ -28,16 +28,16 @@ You betcha!
 
 ### Mobile Device...
 
-![image](https://user-images.githubusercontent.com/61114342/147377658-d974fb08-271c-4ed7-9474-ce201ad5ebdc.png)
+![image](https://github.com/DavesCodeMusings/container-central/blob/main/docs/screenshots/home-mobile-dark.png)
 
-_Containers view shown in portrait mode on simulated mobile phone_
+_Home screen on a simulated iPhone SE_
 
-![image](https://user-images.githubusercontent.com/61114342/147377722-1a578d30-0e7e-4c74-8101-cfd59cde6140.png)
+![image](https://github.com/DavesCodeMusings/container-central/blob/main/docs/screenshots/containers-mobile-dark.png)
 
-_Container images view shown in landscape mode mobile phone._
+_Containers view shown in portrait mode on simulated Galaxy S20_
 
 ### Laptop / Desktop...
 
 ![image](https://github.com/DavesCodeMusings/container-central/blob/main/docs/screenshots/home.png)
 
-_Stacks view shown on a typical landscape mode display panel._
+_Stacks view shown on a typical 16:9 landscape mode display panel._
