@@ -32,7 +32,7 @@ You betcha!
 
 _Home screen on a simulated iPhone SE_
 
-![image](https://user-images.githubusercontent.com/61114342/147377722-1a578d30-0e7e-4c74-8101-cfd59cde6140.png)
+![image](https://github.com/DavesCodeMusings/container-central/blob/main/docs/screenshots/containers-mobile-dark.png)
 
 _Containers view shown in portrait mode on simulated Galaxy S20_
 
