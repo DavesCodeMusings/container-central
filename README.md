@@ -17,7 +17,7 @@ There is a [Quick Start](docs/QuickStart.md) document to get you up and going wi
 When you're done with that, take a look at the [other docs](docs/) to explore more features of Container Central.
 
 ## Where's all this going?
-Currently, Container Central can manage already deployed conainers and Docker Compose stacks. It cannot run a new container or create a new docker-compose.yml. It can't deal with swarm mode or kubernetes. But, it can start, stop or restart existing containers. It can pull the latest version of any images from Docker Hub. It can deploy and remove Docker Compose projects if a YAML file exists. It can even integrate with a locally-hosted git server.
+Currently, Container Central can manage already deployed conainers or deploy new ones using Docker Compose stacks. It can't deal with swarm mode or kubernetes. But, it can pull the latest version of any images from Docker Hub. It can deploy any Docker Compose projects you have the YAML files for. It can even integrate with a locally-hosted git server.
 
 My idea is to focus on the features needed for a typical Raspberry Pi home server. Here's some workflow examples to show where Container Central fits in and where it does not:
 
