@@ -356,10 +356,10 @@ async function viewImages(tagOfInterest) {
       imageData.forEach(image => {
         image.createDate = new Date(image.Created * 1000).toLocaleString();
         if (now - image.Created * 1000 < 30 * 86400000) {  // 86400000 is one day in milliseconds.
-          image.ageIcon = 'icons/calendar-check.svg';
+          image.ageIcon = 'icons/file-outline.svg';
         }
         else {
-          image.ageIcon = 'icons/calendar-clock.svg';
+          image.ageIcon = 'icons/file-clock-outline.svg';
         }
 
         // When an image is updated, but a container still runs an old image, it's possible to have a null tag.
@@ -411,7 +411,7 @@ async function viewStacks(projectOfInterest) {
           <a href="javascript:stackControl('restart', '{{project}}');" title="Restart Stack"><img alt="Up" src="icons/arrow-u-up-right-bold.svg"></a>
         </span>
       </summary>
-      <textarea rows="{{lines}}" cols="60" readonly wrap="off">{{content}}</textarea>
+      <pre>{{content}}</pre>
     </details>
   `;
 

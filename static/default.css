@@ -130,10 +130,16 @@ nav .label {
   display: none;
 }
 
-textarea[readonly] {
-  background-color: white;
+pre {
+  background-color: whitesmoke;
   border: 1px solid black;
+  border-radius: 5px;
   color: dimgray;
+  font-size: 12pt;
+  line-height: normal;
+  max-width: 100%;
+  overflow: auto;
+  padding: 0.2em;
 }
 
 /* Arrange navigation on the left side for wide screens. */
@@ -199,8 +205,8 @@ textarea[readonly] {
     filter: invert(100%);
   }
 
-  textarea[readonly] {
-    background-color: indigo;
+  pre {
+    background: darkslateblue;
     border: 1px solid white;
     color: lightgray;
   }  
