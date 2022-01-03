@@ -211,7 +211,7 @@ async function stackControl(action, stackName) {
 
       html += template.replace(/{{\w+}}/g, (match) => {
         let property = match.replace(/^{{/, '').replace(/}}$/, '');
-        return info[property];
+        return info[property] || match;  // If there's nothing that matches, this passes the {{ }} through.
       });
 
       document.getElementsByTagName('main')[0].innerHTML = html;
@@ -303,7 +303,7 @@ async function viewContainers() {
 
         html += template.replace(/{{\w+}}/g, (match) => {
           let property = match.replace(/^{{/, '').replace(/}}$/, '');
-          return container[property];
+          return container[property] || match;
         });
       });
 
@@ -376,7 +376,7 @@ async function viewImages(tagOfInterest) {
 
         html += template.replace(/{{\w+}}/g, (match) => {
           let property = match.replace(/^{{/, '').replace(/}}$/, '');
-          return image[property];
+          return image[property] || match;
         });
       });
 
@@ -434,7 +434,7 @@ async function viewStacks(projectOfInterest) {
           dockerCompose.lines = dockerCompose.content.split('\n').length;
           html += template.replace(/{{\w+}}/g, (match) => {
             let property = match.replace(/^{{/, '').replace(/}}$/, '');
-            return dockerCompose[property];
+            return dockerCompose[property] || match;
           });
         });
         document.getElementsByTagName('main')[0].innerHTML = html;
@@ -481,7 +481,7 @@ async function viewVolumes() {
         volume.timeStamp = new Date(volume.CreatedAt).toLocaleString();
         html += template.replace(/{{\w+}}/g, (match) => {
           let property = match.replace(/^{{/, '').replace(/}}$/, '');
-          return volume[property];
+          return volume[property] || match;
         });
       });
       document.getElementsByTagName('main')[0].innerHTML = html;
