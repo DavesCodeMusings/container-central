@@ -251,11 +251,13 @@ async function viewContainers() {
           <a href="javascript:containerControl('restart', '{{Id}}');" title="Restart container"><img alt="restart" src="icons/restart.svg"></a>
         </span>
       </summary>
+      <p>{{Id}}</p>
+      <p><img alt="Created:" src="icons/calendar-clock.svg"> {{createDate}}. {{Status}}</p>
       <p>
-        {{Id}}<br>
-        <a href="javascript:viewImages('{{imageTag}}');">{{imageTag}}</a><br>
-        {{createDate}}<br>
-        {{Status}} <a href="javascript:viewStacks('{{stackName}}');"><i>{{stackName}}</i></a><br>
+        <img alt="Image:" src="icons/file-outline.svg"> <a href="javascript:viewImages('{{imageTag}}');">{{imageTag}}</a><br>
+      </p>
+      <p>
+        <img alt="Stack:" src="icons/format-list-bulleted-type.svg"> <a href="javascript:viewStacks('{{stackName}}');">{{stackName}}</a><br>
       </p>
       {{quickCommands}}
     </details>
@@ -336,6 +338,9 @@ async function viewContainers() {
         stateIcon = 'stop-circle.svg';
         anyStopped++;
         break;
+      case 'paused':
+        stateIcon = 'pause-circle.svg';
+        break;
       default:
         stateIcon = 'question.svg';
     }
@@ -361,7 +366,7 @@ async function viewContainers() {
       htmlChunk = htmlChunk.replace(/{{stackName}}/g, container.Labels['com.docker.compose.project']);
     }
     else {
-      htmlChunk = htmlChunk.replace(/{{stackName}}/g, '');
+      htmlChunk = htmlChunk.replace(/{{stackName}}/g, '&lt;none&gt;');
     }
 
     // Some containers may have a pre-defined palatte of quick commands to choose from.
@@ -568,7 +573,7 @@ async function viewConfig() {
         <label for="gitUrl">Repository URL:</label>
         <input id="gitUrl" name="gitUrl" type="url" placeholder="https://git.mypi.home/pi/compose.git" value="{{gitUrl}}">
         <br>
-        <label for="git-no-verify-ssl">Skip SSL Verification:</label> <input id="git-no-verify-ssl" name="gitNoVerifySSL" type="checkbox" value="true">
+        <input id="git-no-verify-ssl" name="gitNoVerifySSL" type="checkbox" value="true"> <label for="git-no-verify-ssl">Skip SSL Verification:</label>
       </fieldset>
 
       <fieldset>

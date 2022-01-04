@@ -71,16 +71,32 @@ form input, form submit {
   padding: 2px 0.2em;
 }
 
+/* Start of checkbox hack */
 form input[type="checkbox"] {
-  height: 16pt;
-  width: 16pt;
+  display: none;
 }
+
+form input[type="checkbox"] + label {
+  cursor: pointer;
+}
+
+form input[type="checkbox"] + label::after {
+  color: dodgerblue;
+  content: " No";
+  cursor: pointer;
+}
+
+form input[type="checkbox"]:checked + label::after {
+  content: " Yes";
+}
+/* End of checkbox hack */
 
 form input[type="number"] {
   width: 5em;
 }
 
 form input[type="submit"] {
+  cursor: pointer;
   float: right;
 }
 
