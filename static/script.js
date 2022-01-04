@@ -246,19 +246,15 @@ async function viewContainers() {
     <details>
       <summary><img alt="{{State}}" src="icons/{{stateIcon}}"> {{name}}
         <span class="popup-controls grouping">
-          <a href="javascript:containerControl('stop', '{{Id}}');" title="Stop container"><img alt="stop" src="icons/stop.svg"></a>
-          <a href="javascript:containerControl('start', '{{Id}}');" title="Start container"><img alt="start" src="icons/play.svg"></a>
-          <a href="javascript:containerControl('restart', '{{Id}}');" title="Restart container"><img alt="restart" src="icons/restart.svg"></a>
+          <a href="javascript:containerControl('stop', '{{Id}}');" title="Stop Container"><img alt="stop" src="icons/stop.svg"></a>
+          <a href="javascript:containerControl('start', '{{Id}}');" title="Start Container"><img alt="start" src="icons/play.svg"></a>
+          <a href="javascript:containerControl('restart', '{{Id}}');" title="Restart Container"><img alt="restart" src="icons/restart.svg"></a>
         </span>
       </summary>
       <p>{{Id}}</p>
       <p><img alt="Created:" src="icons/calendar-clock.svg"> {{createDate}}. {{Status}}</p>
-      <p>
-        <img alt="Image:" src="icons/file-outline.svg"> <a href="javascript:viewImages('{{imageTag}}');">{{imageTag}}</a><br>
-      </p>
-      <p>
-        <img alt="Stack:" src="icons/format-list-bulleted-type.svg"> <a href="javascript:viewStacks('{{stackName}}');">{{stackName}}</a><br>
-      </p>
+      <p><img alt="Image:" src="icons/file-outline.svg"> <a href="javascript:viewImages('{{imageTag}}');" title="Jump to Image">{{imageTag}}</a></p>
+      {{stackInfo}}
       {{quickCommands}}
     </details>
   `;
@@ -281,7 +277,7 @@ async function viewContainers() {
     console.warn(`API call 'GET /images' failed. ${ex}`);
   }
 
-  // Containers may reference quick commands. A GET call to /exec will retrieve these.
+  // Containers may use quick commands. A GET call to /exec will retrieve these.
   // Also not fatal if the call fails.
   console.info(`Fetching quick commands from ${window.location.origin}/exec`);
   let quickCommands = [];
@@ -363,13 +359,14 @@ async function viewContainers() {
 
     // Docker Compose puts information in labels, but not all containers are started using docker-compose.
     if (container.Labels && container.Labels['com.docker.compose.project']) {
-      htmlChunk = htmlChunk.replace(/{{stackName}}/g, container.Labels['com.docker.compose.project']);
+      let stackName = container.Labels['com.docker.compose.project'];
+      htmlChunk = htmlChunk.replace(/{{stackInfo}}/, `<p><img alt="Stack:" src="icons/format-list-bulleted-type.svg"> <a href="javascript:viewStacks('${stackName}');" title="Jump to Stack">${stackName}</a></p>`);
     }
     else {
-      htmlChunk = htmlChunk.replace(/{{stackName}}/g, '&lt;none&gt;');
+      htmlChunk = htmlChunk.replace(/{{stackInfo}}/, '');
     }
 
-    // Some containers may have a pre-defined palatte of quick commands to choose from.
+    // Some containers may have a pre-defined list of quick commands to choose from.
     htmlChunk = htmlChunk.replace(/{{quickCommands}}/, (match) =>{
       paletteHTML = '';
       quickCommands.forEach((command) => {
@@ -401,13 +398,12 @@ async function viewImages(tagOfInterest) {
     <details id="{{tag}}">
       <summary><img alt="freshness indicator" src={{ageIcon}}> {{tag}}
         <span class="popup-controls grouping">
-          <a href="javascript:imageControl('pull', '{{tag}}')" title="Pull latest image"><img alt="pull" src="icons/download.svg"></a>
+          <a href="javascript:imageControl('pull', '{{tag}}')" title="Pull Latest Image"><img alt="pull" src="icons/download.svg"></a>
         </span>
       </summary>
-      <p>
-        {{Id}}<br>
-        {{createDate}}<br>
-        {{size}}M
+      <p>{{Id}}</p>
+      <p><img alt="Created:" src="icons/calendar-clock.svg"> {{createDate}}</p>
+      <p><img alt="Created:" src="icons/chart-arc.svg"> {{size}}M</p>
       </p>
     </details>
   `;
@@ -533,9 +529,8 @@ async function viewVolumes() {
   let template = `
     <details>
       <summary><img alt="generic stack icon" src='icons/database-outline.svg'> {{Name}}</summary>
-      <p>
-        {{Mountpoint}}<br>
-        {{timeStamp}}
+      <p><img alt="Created:" src="icons/calendar-clock.svg"> {{timeStamp}}</p>
+      <p><img alt="Mounted:" src="icons/file-tree-outline.svg"> {{Mountpoint}}</p>
       </p>
     </details>
   `;
