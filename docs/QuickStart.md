@@ -3,17 +3,14 @@
 ## Running
 On Raspberry Pi, the easiest way to run Container Central is to use the Docker container.
 
-First, create a _data_ directory to store Container Central's persistent settings.
-
-Then, start the container with a bind mount for _data_.
+Start the container using a Docker volume for persistent data, like this:
 
 ```
-mkdir data
 docker run -d \
   --name container-central \
   -p 8088:8088 \
   -v /var/run/docker.sock:/var/run/docker.sock \
-  -v ${PWD}/data:/app/data \
+  -v cc_data:/app/data \
   davescodemusings/container-central:latest
 ```
 
