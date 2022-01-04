@@ -37,6 +37,11 @@ details > p {
   margin-top: 0;
 }
 
+details > p img {
+  height: 18px;  /* shrink to fit with smaller font in details */
+  width: auto;
+}
+
 details > summary {
   cursor: pointer;
   list-style: none;

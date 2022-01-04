@@ -59,6 +59,15 @@ async function containerControl(action, containerId) {
 }
 
 /**
+ * Exectute one of the pre-defined commands against a container and return the results.
+ * @param {string} containerID, the container guid where the command will be executed.
+ * @param {string} commandID, the guid of the pre-defined command.
+ */
+function containerExec(containerID, commandID) {
+  showAlert('Not implemented.');
+}
+
+/**
  * A wrapper for the /images API call that URI encodes the image tag.
  * @param {string} action, one of: pull, prune.
  * @param {string} imageTag, in the format name:tag. (e.g. debian:lite)
@@ -140,9 +149,8 @@ async function stackControl(action, stackName) {
 /**
  * Retrieve data from the /containers API call and format as HTML for viewing. 
  */
- async function viewInfo() {
-  let html = '';
-  let template = `
+async function viewInfo() {
+  let html = `
     <h2>{{Name}}</h2>
     <p>
       <img alt="Host" src="icons/memory.svg"> {{NCPU}} CPU / {{ram}}G<br>
@@ -172,31 +180,7 @@ async function stackControl(action, stackName) {
     </p>
   `;
 
-  // Docker Compose "stacks" are not part of the /info API call.
-  console.info(`Fetching stacks from ${window.location.origin}/stacks`);
-  let numStacks = 0;
-  let stacksResponse = await fetch(window.location.origin + '/stacks');
-  if (stacksResponse.status != 200) {
-    console.error(`${stacksResponse.status} received while fetching ${window.location.origin}/stacks`);
-  }
-  else {
-    let stacksInfo = await stacksResponse.json();
-    numStacks = stacksInfo.length;
-  }
-
-  // A count of volumes is not included in /info and muct be gathered separately.
-  console.info(`Fetching volumes from ${window.location.origin}/volumes`);
-  let numVolumes = 0;
-  let volumesResponse = await fetch(window.location.origin + '/volumes');
-  if (volumesResponse.status != 200) {
-    console.error(`${volumesResponse.status} received while fetching ${window.location.origin}/volumes`);
-  }
-  else {
-    let volumesInfo = await volumesResponse.json();
-    numVolumes = volumesInfo.Volumes.length; 
-  }
-
-  // All of the other information comes from /info.
+  // Most of the information for template placeholders comes from the /info API call.
   console.info(`Fetching info from ${window.location.origin}/info`);
   try {
     let infoResponse = await fetch(window.location.origin + '/info');
@@ -205,21 +189,52 @@ async function stackControl(action, stackName) {
     }
     else {
       let info = await infoResponse.json();
-      info.ram = (info.MemTotal / 1024 / 1024 / 1024).toFixed(2);  // measuring in Gig seems a safe bet
-      info.numStacks = numStacks;
-      info.numVolumes = numVolumes;
-
-      html += template.replace(/{{\w+}}/g, (match) => {
+      html = html.replace(/{{\w+}}/g, (match) => {
         let property = match.replace(/^{{/, '').replace(/}}$/, '');
-        return info[property] || match;  // If there's nothing that matches, this passes the {{ }} through.
+        return ((typeof info[property] === 'undefined') ? match : info[property]);
       });
 
-      document.getElementsByTagName('main')[0].innerHTML = html;
+      // Make MemTotal more user-friendly with units in GiBytes.
+      html = html.replace(/{{ram}}/, (info.MemTotal / 1024 / 1024 / 1024).toFixed(2));
     }
   }
   catch {
     showAlert(`API request failed.`);
   }
+
+  // Docker Compose "stacks" are not part of the /info API call.
+  console.info(`Fetching stacks from ${window.location.origin}/stacks`);
+  try {
+    let stacksResponse = await fetch(window.location.origin + '/stacks');
+    if (stacksResponse.status != 200) {
+      console.error(`${stacksResponse.status} received while fetching ${window.location.origin}/stacks`);
+    }
+    else {
+      let stacksInfo = await stacksResponse.json();
+      html = html.replace(/{{numStacks}}/, stacksInfo.length);
+    }
+  }
+  catch {
+    showAlert(`API request failed.`);
+  }
+
+  // A count of volumes is not included in /info and must be gathered separately.
+  console.info(`Fetching volumes from ${window.location.origin}/volumes`);
+  try {
+    let volumesResponse = await fetch(window.location.origin + '/volumes');
+    if (volumesResponse.status != 200) {
+      console.error(`${volumesResponse.status} received while fetching ${window.location.origin}/volumes`);
+    }
+    else {
+      let volumesInfo = await volumesResponse.json();
+      html = html.replace(/{{numVolumes}}/, volumesInfo.Volumes.length);
+    }
+  }
+  catch {
+    showAlert(`API request failed.`);
+  }
+
+  document.getElementsByTagName('main')[0].innerHTML = html;
 }
 
 /**
@@ -242,13 +257,14 @@ async function viewContainers() {
         {{createDate}}<br>
         {{Status}} <a href="javascript:viewStacks('{{stackName}}');"><i>{{stackName}}</i></a><br>
       </p>
+      {{quickCommands}}
     </details>
   `;
 
   // Image IDs are referenced in container. Fetching image data allows more friendly image tags.
   // But it's not critical, so failure to retrieve is not fatal.
-  let imageData = [];
   console.info(`Fetching image info from ${window.location.origin}/images`);
+  let imageData = [];
   try {
     let imagesResponse = await fetch(window.location.origin + '/images');
     if (imagesResponse.status != 200) {
@@ -258,66 +274,117 @@ async function viewContainers() {
       imageData = await imagesResponse.json();
       console.debug(`${imageData.length} image(s) retrieved.`);
     }
+  }
+  catch (ex) {
+    console.warn(`API call 'GET /images' failed. ${ex}`);
+  }
 
-    console.info(`Fetching container info from ${window.location.origin}/containers`);
-    let containersResponse = await fetch(window.location.origin + '/containers');
-    if (containersResponse.status != 200) {
-      console.error(`${containersResponse.status} received while fetching ${window.location.origin}/containers`);
-      html += `<p>API error ${containersResponse.status}</p>`;
+  // Containers may reference quick commands. A GET call to /exec will retrieve these.
+  // Also not fatal if the call fails.
+  console.info(`Fetching quick commands from ${window.location.origin}/exec`);
+  let quickCommands = [];
+  try {
+    let quickCommandsResponse = await fetch(window.location.origin + '/exec');
+    if (quickCommandsResponse.status != 200) {
+      console.error(`${quickCommandsResponse.status} received while fetching ${window.location.origin}/exec`);
     }
     else {
-      let containerData = await containersResponse.json();
-      console.debug(`${containerData.length} container(s) retrieved.`);
-
-      let anyStopped = 0;
-      containerData.forEach(container => {
-        switch (container.State) {
-          case 'running':
-            container.stateIcon = 'play-circle-outline.svg';
-            break;
-          case 'exited':
-            container.stateIcon = 'stop-circle.svg';
-            anyStopped++;
-            break;
-          default:
-            container.stateIcon = 'question.svg';
-        }
-
-        container.name = container.Names[0].replace(/\//, '');  // Names come with a leading /, but it looks better without.
-
-        if (container.Labels && container.Labels['com.docker.compose.project']) {
-          container.stackName = container.Labels['com.docker.compose.project'];
-        }
-        else {
-          container.stackName = '';
-        }
-
-        container.imageTag = container.ImageID;  // Use the sha256 ImageID as the fallback name, but...
-        imageData.forEach(image => {             // Look for a match in the known images for a more friendly name.
-          if (image.Id == container.ImageID && image.RepoTags) {
-            container.imageTag = image.RepoTags[0];
-          }
-        });
-
-        container.createDate = new Date(container.Created * 1000).toLocaleString();  // API uses unix epoch time.
-
-        html += template.replace(/{{\w+}}/g, (match) => {
-          let property = match.replace(/^{{/, '').replace(/}}$/, '');
-          return container[property] || match;
-        });
-      });
-
-      if (anyStopped) {
-        html += `<p><img alt="trash-can" class="control-aside" onclick="containerControl('prune');" src="icons/trash-can-outline.svg"><p>`;
-      }
-
-      document.getElementsByTagName('main')[0].innerHTML = html;
+      quickCommands = await quickCommandsResponse.json();
+      console.debug(`${quickCommands.length} command(s) retrieved.`);
     }
   }
-  catch {
-    showAlert(`API request failed.`);
+  catch (ex) {
+    console.warn(`API call 'GET /exec' failed. ${ex}`);
   }
+
+  // And finally... Containers!
+  console.info(`Fetching container info from ${window.location.origin}/containers`);
+  let containerData = [];
+  let anyStopped = 0;
+  try {
+    let containersResponse = await fetch(window.location.origin + '/containers');
+    if (containersResponse.status != 200) {
+      showAlert(`API request failed.`);
+      console.error(`${containersResponse.status} received while fetching ${window.location.origin}/containers`);
+    }
+    else {
+      containerData = await containersResponse.json();
+      console.debug(`${containerData.length} container(s) retrieved.`);
+    }
+  }
+  catch (ex) {
+    showAlert(`API request failed.`);
+    console.error(`API call 'GET /containers' failed. ${ex}`);
+  }
+  
+  containerData.forEach(container => {
+    let htmlChunk = template;
+
+    // Fill in placeholders with data from the API call.
+    htmlChunk = htmlChunk.replace(/{{\w+}}/g, (match) => {
+      let property = match.replace(/^{{/, '').replace(/}}$/, '');
+      return ((typeof container[property] === 'undefined') ? match : container[property]);
+    });
+
+    // An icon stowing stopped, started, or paused is not returned from the API, but it can be derived. 
+    let stateIcon = '';
+    switch (container.State) {
+      case 'running':
+        stateIcon = 'play-circle-outline.svg';
+        break;
+      case 'exited':
+        stateIcon = 'stop-circle.svg';
+        anyStopped++;
+        break;
+      default:
+        stateIcon = 'question.svg';
+    }
+    htmlChunk = htmlChunk.replace(/{{stateIcon}}/, stateIcon);
+
+    // Container names come with a leading /, but look better without it.
+    htmlChunk = htmlChunk.replace(/{{name}}/, container.Names[0].replace(/\//, ''));
+
+    // The API uses unix epoch time, but people read date-time stamps.
+    htmlChunk = htmlChunk.replace(/{{createDate}}/, new Date(container.Created * 1000).toLocaleString());
+
+    // The containers API call does not cross-reference user-friendly tags, only sha256 image IDs.
+    let imageTag = container.ImageID;  // Fallback in case of no match.
+    imageData.forEach(image => {
+      if (image.Id == container.ImageID && image.RepoTags) {
+        imageTag = image.RepoTags[0];
+      }
+    });
+    htmlChunk = htmlChunk.replace(/{{imageTag}}/g, imageTag);
+
+    // Docker Compose puts information in labels, but not all containers are started using docker-compose.
+    if (container.Labels && container.Labels['com.docker.compose.project']) {
+      htmlChunk = htmlChunk.replace(/{{stackName}}/g, container.Labels['com.docker.compose.project']);
+    }
+    else {
+      htmlChunk = htmlChunk.replace(/{{stackName}}/g, '');
+    }
+
+    // Some containers may have a pre-defined palatte of quick commands to choose from.
+    htmlChunk = htmlChunk.replace(/{{quickCommands}}/, (match) =>{
+      paletteHTML = '';
+      quickCommands.forEach((command) => {
+        if (container.Names[0].includes(command.filter)) {
+          paletteHTML += `<p><img alt="command" src="icons/console.svg"> <a href="javascript:containerExec('${container.Id}', '${command.id}')" title="${command.tooltip}">${command.cmd}</a></p>`;
+        }
+      });
+      return paletteHTML;
+    });
+
+    html += htmlChunk;
+  });
+
+  if (anyStopped) {
+    html += `<p><img alt="trash-can" class="control-aside" onclick="containerControl('prune');" src="icons/trash-can-outline.svg"><p>`;
+  }
+
+  document.getElementsByTagName('main')[0].innerHTML = html;
 }
+
 
 /**
  * Retrieve data from the /images API call and format as HTML for viewing.
@@ -393,7 +460,7 @@ async function viewImages(tagOfInterest) {
   }
 
   if (tagOfInterest) {
-    document.getElementById(tagOfInterest).open = true;  
+    document.getElementById(tagOfInterest).open = true;
   }
 }
 
@@ -449,7 +516,7 @@ async function viewStacks(projectOfInterest) {
   }
 
   if (projectOfInterest) {
-    document.getElementById(projectOfInterest).open = true;  
+    document.getElementById(projectOfInterest).open = true;
   }
 }
 
@@ -515,7 +582,7 @@ async function viewConfig() {
       <input type="submit" value="Save">
     </form>
   `;
-  
+
   console.info(`Fetching configuration from ${window.location.origin}/config`);
   try {
     let configResponse = await fetch(window.location.origin + '/config');

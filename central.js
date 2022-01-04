@@ -16,7 +16,7 @@ try {
   config = JSON.parse(fs.readFileSync(configFile, 'utf-8'));
 }
 catch (ex) {
-  console.error(`Unable to parse ${configFile}\n${ex}\nUsing default values instead.`);
+  console.warn(`Unable to parse ${configFile}\n${ex}\nUsing default values instead.`);
 }
 
 /* Add defaults for any values not set */
@@ -26,21 +26,31 @@ config.listenPort = config.listenPort || '8088';
 const composeBinary = '/usr/local/bin/docker-compose';
 const composeDirectory = path.join(__dirname, 'data', 'compose');
 const dockerSocket = '/var/run/docker.sock';
+const quickCommandsFile =  path.join(__dirname, 'data', 'quick_commands.json');
 
 /* Many things rely on the compose files directory being present. */
 fs.stat(composeDirectory, (err, stat) => {
   if (err) {
-    console.log(`Creating missing directory: ${composeDirectory}`);
+    console.info(`Creating missing directory: ${composeDirectory}`);
     fs.mkdirSync(composeDirectory);
   }
 });
+
+/* Parse the command palette file and report errors at startup to avoid surprises later. */
+var quickCommands = [];
+try {
+  quickCommands = JSON.parse(fs.readFileSync(quickCommandsFile, 'utf-8'));
+}
+catch (ex) {
+  console.warn(`Unable to parse ${quickCommandsFile}\n${ex}\nContainer quick commands will be unavailable.`)
+}
 
 /**
  * Callback function used for Docker API GET requests.
  * @param {object} req, the express.js request.
  * @param {object} res, the express.js response.
  */
-function callAPI(req, res) {
+function callDockerAPI(req, res) {
   let apiOptions = {
     socketPath: dockerSocket,
     method: 'GET'
@@ -99,9 +109,9 @@ app.get('/script.js', (req, res) => {
 
 
 /* API routes for main menu items */
-app.get('/containers', callAPI);
-app.get('/images', callAPI);
-app.get('/info', callAPI);
+app.get('/containers', callDockerAPI);
+app.get('/images', callDockerAPI);
+app.get('/info', callDockerAPI);
 
 app.get('/stacks', (req, res) => {
   let files = fs.readdirSync(composeDirectory).filter(file => file.endsWith('.yml'));
@@ -117,7 +127,7 @@ app.get('/stacks', (req, res) => {
   res.send(JSON.stringify(stackInfo, null, 2));
 });
 
-app.get('/volumes', callAPI);
+app.get('/volumes', callDockerAPI);
 app.get('/config', (req, res) => {
   res.json(config);
 });
@@ -146,6 +156,11 @@ app.post('/config', (req, res) => {
   }
 
   res.redirect('/');
+});
+
+// Return a list of available commands.
+app.get('/exec', (req, res) => {
+  res.json(quickCommands);
 });
 
 app.get('/stacks/git', (req, res) => {
