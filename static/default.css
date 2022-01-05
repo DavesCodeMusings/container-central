@@ -100,7 +100,7 @@ form input[type="submit"] {
   float: right;
 }
 
-form input[type="url"] {
+form input[type="url"], form input[type="text"] {
   width: 100%;
 }
 

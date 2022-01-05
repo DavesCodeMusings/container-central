@@ -22,11 +22,11 @@ catch (ex) {
 
 /* Add defaults for any values not set */
 config.gitNoVerifySSL = config.gitNoVerifySSL || false;
+config.composeBinary = config.composeBinary || '/usr/local/bin/docker-compose'; 
 config.listenPort = config.listenPort || '8088';
 
-const composeBinary = '/usr/local/bin/docker-compose';
-const composeDirectory = path.join(__dirname, 'data', 'compose');
 const dockerSocket = '/var/run/docker.sock';
+const composeDirectory = path.join(__dirname, 'data', 'compose');
 const quickCommandsFile =  path.join(__dirname, 'data', 'quick_commands.json');
 
 /* Many things rely on the compose files directory being present. */
@@ -156,9 +156,15 @@ app.post('/config', (req, res) => {
     config.gitNoVerifySSL = false;
   }
 
+  if (proposedConfig.composeBinary && fs.existsSync(proposedConfig.composeBinary)) {
+    config.composeBinary = proposedConfig.composeBinary
+  }
+  
   if (proposedConfig.listenPort) {  // use integer, not string
     config.listenPort = parseInt(proposedConfig.listenPort);
   }
+
+  fs.writeFileSync(configFile, JSON.stringify(config, null, 2));
 
   console.info(`302 ${ip} ${req.method} ${req.path}`);
   res.redirect('/');
@@ -224,6 +230,7 @@ app.post('/containers/:containerId/:action', (req, res) => {
   
     if (!cmd) {
       console.error(`404 ${ip} ${req.method} ${req.path}`);
+      console.debug(`Command not found when looking for: ${commandId}`);
       res.status(404);
       res.send('Command not found.');
     }
@@ -237,8 +244,9 @@ app.post('/containers/:containerId/:action', (req, res) => {
   }
   else {
     console.error(`404 ${ip} ${req.method} ${req.path}`);
+    console.debug(`Requested action was: ${action}, but that is not a valid action.`);
     res.status(404);
-    res.send(`"${action} is not recognized."`);
+    res.send(`"Unrecognized action: ${action}."`);
   }
 });
 
@@ -248,7 +256,7 @@ app.get('/stacks/git', (req, res) => {
     console.error(`404 ${ip} ${req.method} ${req.path}`);
     console.debug(`gitUrl is not configured in ${configFile}`);
     res.status(404);
-    res.json('URL not configured.');
+    res.json('Git URL not configured.');
   }
   else if (!fs.existsSync(composeDirectory)) {
     console.error(`${ip} ${req.method} ${req.path}`);
@@ -364,21 +372,25 @@ app.post('/stacks/:stackName/:action', (req, res) => {
   if (action == 'down' || action == 'up' || action == 'restart') {
     fs.stat(`${composeDirectory}/${stackName}.yml`, (err, stat) => {
       if (err) {
+        console.error(`${err.code} when looking for ${composeDirectory}/${stackName}.yml`);
         res.status(404);
         res.send(`"${err.code} when looking for ${composeDirectory}/${stackName}.yml"`);
       }
       else {
-        fs.stat(composeBinary, (err, stat) => {
+        fs.stat(config.composeBinary, (err, stat) => {
           if (err) {
+            console.error(`${err.code} when looking for ${config.composeBinary}`);
             res.status(404);
-            res.send(`"${err.code} when looking for ${composeBinary}`);
+            res.send("docker-compose not found");
           }
           else {
             if (action == 'up') {
-              exec(`${composeBinary} -f ${stackName}.yml -p ${stackName} up -d`, { cwd: composeDirectory }, (err, stdout, stderr) => {
+              exec(`${config.composeBinary} -f ${stackName}.yml -p ${stackName} up -d`, { cwd: composeDirectory }, (err, stdout, stderr) => {
                 if (err) {
+                  console.error(`Command failed: ${config.composeBinary} -f ${stackName}.yml -p ${stackName} up -d`);
+                    console.debug(stderr);
                   res.status(404);
-                  res.send(`"${stderr}"`);
+                  res.send(`"Deployment failed."`);
                 }
                 else {
                   res.send(`"${stdout}"`);
@@ -386,13 +398,17 @@ app.post('/stacks/:stackName/:action', (req, res) => {
               });
             }
             else {
-              exec(`${composeBinary} -f ${stackName}.yml -p ${stackName} ${action}`, { cwd: composeDirectory }, (err, stdout, stderr) => {
+              exec(`${config.composeBinary} -f ${stackName}.yml -p ${stackName} ${action}`, { cwd: composeDirectory }, (err, stdout, stderr) => {
                 if (err) {
+                  console.error(`Command failed: ${config.composeBinary} -f ${stackName}.yml -p ${stackName} ${action}`);
+                  console.debug(stderr);
                   res.status(404);
-                  res.send(`"${stderr}"`);
+                  res.send(`"Action failed: ${action}"`);
                 }
                 else {
-                  res.send(`"${stdout}"`);
+                  console.debug(`Command succeeded: ${config.composeBinary} -f ${stackName}.yml -p ${stackName} ${action}`);
+                  console.debug(stderr);
+                  res.send(`"Successful ${action}"`);
                 }
               });
             }
@@ -403,7 +419,7 @@ app.post('/stacks/:stackName/:action', (req, res) => {
   }
   else {
     res.status(406);
-    res.send(`"${action} is not a supported action."`)
+    res.send(`"Unsupported action: ${action}."`)
   }
 });
 

@@ -584,6 +584,12 @@ async function viewConfig() {
       </fieldset>
 
       <fieldset>
+        <legend>Stack Deployment</legend>
+        <label for="compose-binary">Path to docker-compose:</label>
+        <input id="compose-binary" name="composeBinary" type="text" placeholder="/usr/bin/docker-compose" value="{{composeBinary}}">
+      </fieldset>
+
+      <fieldset>
         <legend>Server</legend>
         <label for="listenPort">Listen port:</label>
         <input id="listenPort" name="listenPort" type="number" placeholder="8088" value="{{listenPort}}">
