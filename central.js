@@ -16,7 +16,8 @@ try {
   config = JSON.parse(fs.readFileSync(configFile, 'utf-8'));
 }
 catch (ex) {
-  console.warn(`Unable to parse ${configFile}\n${ex}\nUsing default values instead.`);
+  console.warn(`Unable to parse ${configFile}\n${ex}`);
+  console.debug(`Using default values instead.`);
 }
 
 /* Add defaults for any values not set */
@@ -67,15 +68,15 @@ function callDockerAPI(req, res) {
       apiOptions.path = req.path;
   }
 
-  let data = '';
-
   const apiReq = http.request(apiOptions, (apiRes) => {
+    let data = '';
+
     apiRes.on('data', d => {
       data += d.toString();
     });
     apiRes.on('end', () => {
       let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-      console.info(`${apiRes.statusCode} ${ip} ${apiOptions.path}`);
+      console.info(`${apiRes.statusCode} ${ip} API ${req.method} ${apiOptions.path}`);
       res.setHeader("Content-Type", "application/json");
       res.send(data);
     });
@@ -115,6 +116,7 @@ app.get('/info', callDockerAPI);
 
 app.get('/stacks', (req, res) => {
   let files = fs.readdirSync(composeDirectory).filter(file => file.endsWith('.yml'));
+  let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
   let stackInfo = [];
   files.forEach(file => {
     let info = {
@@ -123,19 +125,22 @@ app.get('/stacks', (req, res) => {
     }
     stackInfo.push(info);
   });
+  console.info(`200 ${ip} ${req.method} ${req.path}`);
   res.setHeader("Content-Type", "application/json");
   res.send(JSON.stringify(stackInfo, null, 2));
 });
 
 app.get('/volumes', callDockerAPI);
 app.get('/config', (req, res) => {
+  let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  console.info(`200 ${ip} ${req.method} ${req.path}`);
   res.json(config);
 });
 
+/* Uploading new config values. */
 app.post('/config', (req, res) => {
   let proposedConfig = req.body;
   let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-  console.info(`${ip} POST /config ${JSON.stringify(proposedConfig)}`);
 
   if (proposedConfig.gitUrl === 'undefined') {  // use empty string, not undefined
     config.gitUrl == '';
@@ -155,104 +160,37 @@ app.post('/config', (req, res) => {
     config.listenPort = parseInt(proposedConfig.listenPort);
   }
 
+  console.info(`302 ${ip} ${req.method} ${req.path}`);
   res.redirect('/');
 });
 
-// Return a list of available commands.
-app.get('/exec', (req, res) => {
+// A list of available quick commands to choose from.
+app.get('/containers/exec', (req, res) => {
+  let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+
+  console.info(`200 ${ip} ${req.method} ${req.path}`);
   res.json(quickCommands);
-});
-
-app.post('/exec/:containerID', (req, res) => {
-  let containerID = req.params['containerID'];
-  let commandID = req.body.cmd;
-  let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-  console.info(`${ip} POST /exec ${commandID}`);
-
-  let cmd = '';
-  for (let i = 0; i < quickCommands.length; i++) {
-    if (quickCommands[i].id == commandID) {
-      cmd = quickCommands[i].cmd;
-      break;
-    }
-  }
-
-  if (!cmd) {
-    res.status(404);
-    res.send('Command not found.');
-  }
-  else {
-    console.debug(`Executing '${cmd}' for container ${containerID}`);
-    let result = "";
-    res.send(`${result || 'Command complete.'}`);
-  }
-});
-
-app.get('/stacks/git', (req, res) => {
-  let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-  if (!config.gitUrl) {
-    res.status(404);
-    res.json('URL not configured.');
-    console.error(`404 ${ip} /stacks/git\ngitUrl is not configured in ${configFile}`);
-  }
-  else if (!fs.existsSync(composeDirectory)) {
-    res.status(404);
-    res.json('No such directory.');
-    console.error(`404 ${ip} /stacks/git\nCannot find compose YAML directory: ${composeDirectory}`);
-  }
-  else {  // All the prerequisites have checked out.
-    let execOptions = { cwd: composeDirectory };
-    if (config.gitNoVerifySSL) {
-      execOptions['env'] = { 'GIT_SSL_NO_VERIFY': true };
-    }
-    if (!fs.existsSync(`${composeDirectory}/.git`)) {  // If no local repo, try to recover by doing git clone.
-      console.error(`No local copy of git repository. Trying git clone ${config.gitUrl}`);
-      exec(`git clone ${config.gitUrl} . && git config pull.ff only`, execOptions, (err, stdout, stderr) => {
-        if (err) {
-          console.error(`500 ${ip} /stacks/git\n${stderr}`);
-          res.status(500);
-          res.json('git clone failed.');
-        }
-        else {
-          console.info(`200 ${ip} /stacks/git`);
-          res.json('git clone successful.');
-        }
-      });
-    }
-    else {
-      exec(`git pull`, execOptions, (err, stdout, stderr) => {
-        if (err) {
-          console.error(`500 ${ip} /stacks/git\n${stderr}`);
-          res.status(500);
-          res.json('git pull failed.');
-        }
-        else {
-          console.info(`200 ${ip} /stacks/git`);
-          res.json('git pull successful.');
-        }
-      });
-    }
-  }
 });
 
 app.post('/containers/:containerId/:action', (req, res) => {
   let action = req.params['action'];
+  let containerId = req.params['containerId'];
+  let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
 
   if (action == 'stop' || action == 'start' || action == 'restart') {
-    let containerId = req.params['containerId'];
     let apiOptions = {
       socketPath: dockerSocket,
       method: 'POST',
       path: `/containers/${containerId}/${action}`
     };
-    let data = '';
 
     const apiReq = http.request(apiOptions, (apiRes) => {
+      let data = '';
+
       apiRes.on('data', d => {
         data += d.toString();
       });
       apiRes.on('end', () => {
-        let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
         console.info(`${apiRes.statusCode} ${ip} ${apiOptions.path}`);
         let message = '';
         switch (apiRes.statusCode) {
@@ -273,8 +211,85 @@ app.post('/containers/:containerId/:action', (req, res) => {
     });
     apiReq.end();
   }
+  else if (action == 'exec') {
+    let commandId = req.body.cmd;
+  
+    let cmd = '';
+    for (let i = 0; i < quickCommands.length; i++) {
+      if (quickCommands[i].id == commandId) {
+        cmd = quickCommands[i].cmd;
+        break;
+      }
+    }
+  
+    if (!cmd) {
+      console.error(`404 ${ip} ${req.method} ${req.path}`);
+      res.status(404);
+      res.send('Command not found.');
+    }
+    else {
+      let result = "";
+
+      console.info(`200 ${ip} ${req.method} ${req.path}`);
+      console.debug(`Executing command '${cmd}'`);
+      res.send(`${result || 'Command complete.'}`);
+    }  
+  }
   else {
+    console.error(`404 ${ip} ${req.method} ${req.path}`);
+    res.status(404);
     res.send(`"${action} is not recognized."`);
+  }
+});
+
+app.get('/stacks/git', (req, res) => {
+  let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  if (!config.gitUrl) {
+    console.error(`404 ${ip} ${req.method} ${req.path}`);
+    console.debug(`gitUrl is not configured in ${configFile}`);
+    res.status(404);
+    res.json('URL not configured.');
+  }
+  else if (!fs.existsSync(composeDirectory)) {
+    console.error(`${ip} ${req.method} ${req.path}`);
+    console.debug(`Cannot find compose YAML directory: ${composeDirectory}`);
+    res.status(404);
+    res.json('No such directory.');
+  }
+  else {  // All the prerequisites have checked out.
+    let execOptions = { cwd: composeDirectory };
+    if (config.gitNoVerifySSL) {
+      execOptions['env'] = { 'GIT_SSL_NO_VERIFY': true };
+    }
+    if (!fs.existsSync(`${composeDirectory}/.git`)) {  // If no local repo, try to recover by doing git clone.
+      console.error(`No local copy of git repository. Trying git clone ${config.gitUrl}`);
+      exec(`git clone ${config.gitUrl} . && git config pull.ff only`, execOptions, (err, stdout, stderr) => {
+        if (err) {
+          console.error(`500 ${ip} ${req.method} ${req.path}`);
+          console.debug(stderr);
+          res.status(500);
+          res.json('git clone failed.');
+        }
+        else {
+          console.info(`200 ${ip} ${req.method} ${req.path}`);
+          res.json('git clone successful.');
+        }
+      });
+    }
+    else {
+      exec(`git pull`, execOptions, (err, stdout, stderr) => {
+        if (err) {
+          console.error(`500 ${ip} ${req.method} ${req.path}`);
+          console.debug(stderr);
+          res.status(500);
+          res.json('git pull failed.');
+        }
+        else {
+          console.info(`200 ${ip} ${req.method} ${req.path}`);
+          res.json('git pull successful.');
+        }
+      });
+    }
   }
 });
 

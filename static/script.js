@@ -69,7 +69,7 @@ async function containerExec(containerID, commandID) {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
     body: `cmd=${commandID}`
   }
-  let response = await fetch(`/exec/${containerID}`, options);
+  let response = await fetch(`/containers/${containerID}/exec/`, options);
   if (response.status != 200) {
     showAlert(`${infoResponse.status} received while fetching ${window.location.origin}/info`);
   }
@@ -289,14 +289,14 @@ async function viewContainers() {
     console.warn(`API call 'GET /images' failed. ${ex}`);
   }
 
-  // Containers may use quick commands. A GET call to /exec will retrieve these.
+  // Containers may use quick commands. A GET call to /containers/exec will retrieve these.
   // Also not fatal if the call fails.
-  console.info(`Fetching quick commands from ${window.location.origin}/exec`);
+  console.info(`Fetching quick commands from ${window.location.origin}/containers/exec`);
   let quickCommands = [];
   try {
-    let quickCommandsResponse = await fetch(window.location.origin + '/exec');
+    let quickCommandsResponse = await fetch(window.location.origin + '/containers/exec');
     if (quickCommandsResponse.status != 200) {
-      console.error(`${quickCommandsResponse.status} received while fetching ${window.location.origin}/exec`);
+      console.error(`${quickCommandsResponse.status} received while fetching ${window.location.origin}/containers/exec`);
     }
     else {
       quickCommands = await quickCommandsResponse.json();
@@ -304,7 +304,7 @@ async function viewContainers() {
     }
   }
   catch (ex) {
-    console.warn(`API call 'GET /exec' failed. ${ex}`);
+    console.warn(`API call 'GET /containers/exec' failed. ${ex}`);
   }
 
   // And finally... Containers!
