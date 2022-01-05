@@ -63,8 +63,20 @@ async function containerControl(action, containerId) {
  * @param {string} containerID, the container guid where the command will be executed.
  * @param {string} commandID, the guid of the pre-defined command.
  */
-function containerExec(containerID, commandID) {
-  showAlert('Not implemented.');
+async function containerExec(containerID, commandID) {
+  let options = {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+    body: `cmd=${commandID}`
+  }
+  let response = await fetch(`/exec/${containerID}`, options);
+  if (response.status != 200) {
+    showAlert(`${infoResponse.status} received while fetching ${window.location.origin}/info`);
+  }
+  else {
+    result = await response.text();
+    showAlert(result);
+  }
 }
 
 /**

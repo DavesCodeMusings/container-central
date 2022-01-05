@@ -163,6 +163,31 @@ app.get('/exec', (req, res) => {
   res.json(quickCommands);
 });
 
+app.post('/exec/:containerID', (req, res) => {
+  let containerID = req.params['containerID'];
+  let commandID = req.body.cmd;
+  let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  console.info(`${ip} POST /exec ${commandID}`);
+
+  let cmd = '';
+  for (let i = 0; i < quickCommands.length; i++) {
+    if (quickCommands[i].id == commandID) {
+      cmd = quickCommands[i].cmd;
+      break;
+    }
+  }
+
+  if (!cmd) {
+    res.status(404);
+    res.send('Command not found.');
+  }
+  else {
+    console.debug(`Executing '${cmd}' for container ${containerID}`);
+    let result = "";
+    res.send(`${result || 'Command complete.'}`);
+  }
+});
+
 app.get('/stacks/git', (req, res) => {
   let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
   if (!config.gitUrl) {
