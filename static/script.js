@@ -586,7 +586,7 @@ async function viewConfig() {
       <fieldset>
         <legend>Stack Deployment</legend>
         <label for="compose-binary">Path to docker-compose:</label>
-        <input id="compose-binary" name="composeBinary" type="text" placeholder="/usr/bin/docker-compose" value="{{composeBinary}}">
+        <input id="compose-binary" name="composeBinary" type="text" placeholder="/usr/local/bin/docker-compose" value="{{composeBinary}}">
       </fieldset>
 
       <fieldset>

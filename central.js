@@ -4,13 +4,11 @@
  * An API to expose parts of the Docker API and also provide an interface
  * to docker-compose.yml files.
  */
+import express, { urlencoded } from 'express';
 import { exec } from 'child_process';
-import express, { urlencoded } from 'express';  // npm install express for this one.
 import { readFileSync, stat as _stat, mkdirSync, readdirSync, existsSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { request } from 'http';
-
-const dockerSocket = '/var/run/docker.sock';
 
 const configFile = 'config.json'
 var config = {};
@@ -50,44 +48,49 @@ catch (ex) {
 }
 
 /**
- * Callback function used for Docker API GET requests.
- * @param {object} req, the express.js request.
- * @param {object} res, the express.js response.
- */
-function callDockerAPI(req, res) {
-  let apiOptions = {
-    socketPath: dockerSocket,
-    method: 'GET'
+ * Promise wrapper for http.request to Docker API.
+ * (Node-fetch has no plans to support Unix sockets, so here we are...)
+ * @param {string} path, the API URL path.
+ * @param {string} method, GET or POST. Defaults to GET.
+ * @return {object} a promise to be filled with the API response.
+*/
+function callDockerAPI(path, method = 'GET') {
+  return new Promise ((resolve, reject) => {
+  let options = {
+    socketPath: '/var/run/docker.sock',
+    method: method,
+    path: path
   };
 
-  switch (req.path) {
-    case '/containers':
-      apiOptions.path = req.path + '/json?all="true"';
-      break;
-    case '/images':
-      apiOptions.path = req.path + '/json';
-      break;
-    default:
-      apiOptions.path = req.path;
-  }
-
-  const apiReq = request(apiOptions, (apiRes) => {
+  const req = request(options, (res) => {
     let data = '';
 
-    apiRes.on('data', d => {
+    res.on('data', d => {
       data += d.toString();
     });
-    apiRes.on('end', () => {
-      let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-      console.info(`${apiRes.statusCode} ${ip} API ${req.method} ${apiOptions.path}`);
-      res.setHeader("Content-Type", "application/json");
-      res.send(data);
+    res.on('end', () => {
+      console.info(`${res.statusCode} API ${options.method} ${options.path}`);
+      let reply = '';
+      switch (res.statusCode) {
+        case 204:
+          reply = `"Success"`;
+          break;
+        case 304:
+          reply = `"Unchanged"`;
+          break;
+        case 404:
+          reply = `"Not Found"`;
+        default:
+          reply = data;
+      }
+      resolve(reply);
     });
   });
-  apiReq.on('error', err => {
-    console.error(err)
+  req.on('error', err => {
+    reject(err);
   });
-  apiReq.end();
+  req.end();
+  });
 }
 
 const app = express();
@@ -98,14 +101,17 @@ app.get('/', (req, res) => {
   res.setHeader('Content-Type', 'text/html');
   res.send(readFileSync('static/index.html'));
 });
+
 app.get('/default.css', (req, res) => {
   res.setHeader('Content-Type', 'text/css');
   res.send(readFileSync('static/default.css'));
 });
+
 app.get('/icons/:filename', (req, res) => {
   res.setHeader('Content-Type', 'image/svg+xml');
   res.send(readFileSync(`static/icons/${req.params['filename']}`));
 });
+
 app.get('/script.js', (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
   res.send(readFileSync('static/script.js'));
@@ -113,9 +119,28 @@ app.get('/script.js', (req, res) => {
 
 
 /* API routes for main menu items */
-app.get('/containers', callDockerAPI);
-app.get('/images', callDockerAPI);
-app.get('/info', callDockerAPI);
+app.get('/containers', async (req, res) => {
+  let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  let path = req.path  + '/json?all="true"';  // only running containers without all="true"
+  let data = await callDockerAPI(path);
+  console.info(`${res.statusCode} ${ip} API ${path}`);
+  res.send(data);
+});
+
+app.get('/images', async (req, res) => {
+  let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  let path = req.path  + '/json';
+  let data = await callDockerAPI(path);
+  console.info(`${res.statusCode} ${ip} API ${path}`);
+  res.send(data);
+});
+
+app.get('/info', async (req, res) => {
+  let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  let data = await callDockerAPI(req.path);
+  console.info(`${res.statusCode} ${ip} API ${req.path}`);
+  res.send(data);
+});
 
 app.get('/stacks', (req, res) => {
   let files = readdirSync(composeProjectsPath).filter(file => file.endsWith('.yml'));
@@ -133,7 +158,13 @@ app.get('/stacks', (req, res) => {
   res.send(JSON.stringify(stackInfo, null, 2));
 });
 
-app.get('/volumes', callDockerAPI);
+app.get('/volumes',  async (req, res) => {
+  let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  let data = await callDockerAPI(req.path);
+  console.info(`${res.statusCode} ${ip} API ${req.path}`);
+  res.send(data);
+});
+
 app.get('/config', (req, res) => {
   let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
   console.info(`200 ${ip} ${req.method} ${req.path}`);
@@ -181,57 +212,20 @@ app.get('/containers/exec', (req, res) => {
   res.json(quickCommands);
 });
 
-app.post('/containers/:containerId/:action', (req, res) => {
+app.post('/containers/:containerId/:action', async (req, res) => {
   let action = req.params['action'];
   let containerId = req.params['containerId'];
   let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
 
   if (action == 'stop' || action == 'start' || action == 'restart') {
-    let apiOptions = {
-      socketPath: dockerSocket,
-      method: 'POST',
-      path: `/containers/${containerId}/${action}`
-    };
-
-    const apiReq = request(apiOptions, (apiRes) => {
-      let data = '';
-
-      apiRes.on('data', d => {
-        data += d.toString();
-      });
-      apiRes.on('end', () => {
-        console.info(`${apiRes.statusCode} ${ip} ${apiOptions.path}`);
-        let message = '';
-        switch (apiRes.statusCode) {
-          case 204:
-            message = `"success"`;
-            break;
-          case 304:
-            message = `"unchanged"`;
-            break;
-          default:
-            message = `"unknown"`;
-        }
-        res.send(message);
-      });
-    });
-    apiReq.on('error', err => {
-      console.error(err)
-    });
-    apiReq.end();
+    let reply = await callDockerAPI(`/containers/${containerId}/${action}`, 'POST');
+    res.send(reply);
   }
   else if (action == 'exec') {
     let commandId = req.body.cmd;
 
-    let cmd = '';
-    for (let i = 0; i < quickCommands.length; i++) {
-      if (quickCommands[i].id == commandId) {
-        cmd = quickCommands[i].cmd;
-        break;
-      }
-    }
-
-    if (!cmd) {
+    let quickCmd = quickCommands.find(commandObj => commandObj.id == commandId);
+    if (!quickCmd) {
       console.error(`404 ${ip} ${req.method} ${req.path}`);
       console.debug(`Command not found when looking for: ${commandId}`);
       res.status(404);
@@ -241,7 +235,7 @@ app.post('/containers/:containerId/:action', (req, res) => {
       let result = "";
 
       console.info(`200 ${ip} ${req.method} ${req.path}`);
-      console.debug(`Executing command '${cmd}'`);
+      console.debug(`Executing command '${quickCmd.cmd}'`);
       res.send(`${result || 'Command complete.'}`);
     }
   }
@@ -298,68 +292,25 @@ app.get('/stacks/git', (req, res) => {
   }
 });
 
-app.post('/:target/prune', (req, res) => {
+app.post('/:target/prune', async (req, res) => {
   let target = req.params['target'];
   if (target == 'containers' || target == 'images' || target == 'volumes') {
-    let apiOptions = {
-      socketPath: dockerSocket,
-      method: 'POST',
-      path: `/${target}/prune`
-    };
-
-    if (target == 'containers' || target == 'images' || target == 'volumes') {
-      let data = '';
-
-      const apiReq = request(apiOptions, (apiRes) => {
-        apiRes.on('data', d => {
-          data += d.toString();
-        });
-        apiRes.on('end', () => {
-          let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-          console.info(`${apiRes.statusCode} ${ip} ${apiOptions.path}`);
-          res.status(apiRes.statusCode);
-          res.send('"success"');  // JSON is expected by the client, so extra quoting is required.
-        });
-      });
-      apiReq.on('error', err => {
-        console.error(err);
-        console.error(data);
-        res.status(500);
-        res.send('"error"');
-      });
-      apiReq.end();
-    }
-    else {
-      res.send(`"${target} is not recognized."`);
-    }
+    let reply = await callDockerAPI(req.path, 'POST');
+    res.send(reply);
+  }
+  else {
+    res.status(406);
+    res.send(`"${target} is unsupported."`);
   }
 });
 
-app.post('/images/pull/:imageTag', (req, res) => {
+app.post('/images/pull/:imageTag', async (req, res) => {
   let [image, tag] = req.params['imageTag'].split(':');
-  let apiOptions = {
-    socketPath: dockerSocket,
-    method: 'POST',
-    path: `/images/create?fromImage=${image}&platform=arm&repo=hub.docker.com&tag=${tag}`
-  };
+  console.debug(`Pulling: ${image}:${tag}`);
 
-  let data = '';
-  const apiReq = request(apiOptions, (apiRes) => {
-    apiRes.on('data', d => {
-      data += d.toString();
-    });
-    apiRes.on('end', () => {
-      let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-      console.info(`${apiRes.statusCode} ${ip} ${apiOptions.path}`);
-      res.status(apiRes.statusCode);
-      res.setHeader("Content-Type", "application/json");
-      res.send(JSON.stringify(data, null, 2));
-    });
-  });
-  apiReq.on('error', err => {
-    console.error(err)
-  });
-  apiReq.end();
+  let reply = await callDockerAPI(`/images/create?fromImage=${image}&platform=arm&repo=hub.docker.com&tag=${tag}`, 'POST');
+  console.log(reply);
+  res.send(reply);
 });
 
 app.post('/stacks/:stackName/:action', (req, res) => {
