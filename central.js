@@ -247,7 +247,7 @@ app.post('/containers/:containerId/:action', async (req, res) => {
   }
 });
 
-app.get('/stacks/git', (req, res) => {
+app.post('/stacks/git', (req, res) => {
   let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
   if (!config.gitUrl) {
     console.error(`404 ${ip} ${req.method} ${req.path}`);
