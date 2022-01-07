@@ -1,4 +1,4 @@
-# Webhooks
+# Webhooks for Git Integration
 This document shows how to configure a self-hosted Gitea server to notify Container Central whenever the repository of Docker Compose YAML files is updated so Container Central can stay in sync.
 
 ## Obligatory Disclaimer
