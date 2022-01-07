@@ -2,9 +2,7 @@
 This document shows how to configure a self-hosted Gitea server to notify Container Central whenever the repository of Docker Compose YAML files is updated so Container Central can stay in sync.
 
 ## Obligatory Disclaimer
-This only works with locally-hosted Gitea as far as I know. Gitea is the only git server I'm aware of that can use HTTP GET when calling a webhook. (Most git servers do HTTPS POST.)
-
-You will not be able to use webhooks triggered from a public git service like GitHub, because with a typical home LAN, there is no way to receive HTTP requests from the outside.
+This only works with a locally-hosted git server, like Gitea. You will not be able to use webhooks triggered from a public git service like GitHub, because a typical home LAN will have no way to receive HTTP requests from the outside.
 
 ## Prerequisites
 You need to have a Gitea server running and Container Central configured for manual git pulls (See the [Git Integration](Git-Integration.md) document for details.
@@ -18,7 +16,7 @@ Once the prerequisites are taken care of, all you need is a Container Central UR
 http://mypi.home:8088/stacks/git
 ```
 
-That's it. Adjust the domain name to suit your configuration and plug that into Gitea for the target URL. Configure Gitea for a GET request and trigger on PUSH events, save, and you're done.
+That's it. Adjust the domain name to suit your configuration and plug that into Gitea for the target URL. Configure Gitea for a POST request and trigger on PUSH events, save, and you're done.
 
 ## Testing the Webhook
 After configuring the webhook, add a new Docker Compose YAML file to your Gitea repository.
