@@ -3,10 +3,11 @@
  * @param {string} msg, the text to display.
  */
 function showAlert(msg) {
+  console.info(`alert: ${msg}`);
   alertDiv = document.getElementById('alert');
   alertDiv.innerHTML = msg;
   alertDiv.style.display = 'block';
-  setTimeout(() => { alertDiv.style.display = 'none'; }, 7000);
+  setTimeout(() => { alertDiv.style.display = 'none'; }, 9000);
 }
 
 /**

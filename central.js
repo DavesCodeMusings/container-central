@@ -54,42 +54,50 @@ catch (ex) {
  * @param {string} method, GET or POST. Defaults to GET.
  * @return {object} a promise to be filled with the API response.
 */
-function callDockerAPI(path, method = 'GET') {
-  return new Promise ((resolve, reject) => {
-  let options = {
-    socketPath: '/var/run/docker.sock',
-    method: method,
-    path: path
-  };
+function callDockerAPI(path, method = 'GET', body = '') {
+  return new Promise((resolve, reject) => {
+    let options = {
+      socketPath: '/var/run/docker.sock',
+      method: method,
+      path: path
+    };
+    if (body) {
+      options.headers = { "Content-Type": "application/json" };
+      body = decodeURIComponent(body);
+    }
 
-  const req = request(options, (res) => {
-    let data = '';
+    const req = request(options, (res) => {
+      let data = '';
 
-    res.on('data', d => {
-      data += d.toString();
+      res.on('data', d => {
+        data += d.toString();
+      });
+
+      res.on('end', () => {
+        console.info(`${res.statusCode} API ${options.method} ${options.path}`);
+        let reply = '';
+        switch (res.statusCode) {
+          case 204:
+            reply = `"Success"`;
+            break;
+          case 304:
+            reply = `"Unchanged"`;
+            break;
+          case 404:
+            reply = `"Not Found"`;
+          default:
+            reply = data;
+        }
+        resolve(reply);
+      });
     });
-    res.on('end', () => {
-      console.info(`${res.statusCode} API ${options.method} ${options.path}`);
-      let reply = '';
-      switch (res.statusCode) {
-        case 204:
-          reply = `"Success"`;
-          break;
-        case 304:
-          reply = `"Unchanged"`;
-          break;
-        case 404:
-          reply = `"Not Found"`;
-        default:
-          reply = data;
-      }
-      resolve(reply);
+
+    req.on('error', err => {
+      reject(err);
     });
-  });
-  req.on('error', err => {
-    reject(err);
-  });
-  req.end();
+
+    req.write(body);
+    req.end();
   });
 }
 
@@ -121,7 +129,7 @@ app.get('/script.js', (req, res) => {
 /* API routes for main menu items */
 app.get('/containers', async (req, res) => {
   let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-  let path = req.path  + '/json?all="true"';  // only running containers without all="true"
+  let path = req.path + '/json?all="true"';  // only running containers without all="true"
   let data = await callDockerAPI(path);
   console.info(`${res.statusCode} ${ip} API ${path}`);
   res.send(data);
@@ -129,7 +137,7 @@ app.get('/containers', async (req, res) => {
 
 app.get('/images', async (req, res) => {
   let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-  let path = req.path  + '/json';
+  let path = req.path + '/json';
   let data = await callDockerAPI(path);
   console.info(`${res.statusCode} ${ip} API ${path}`);
   res.send(data);
@@ -158,7 +166,7 @@ app.get('/stacks', (req, res) => {
   res.send(JSON.stringify(stackInfo, null, 2));
 });
 
-app.get('/volumes',  async (req, res) => {
+app.get('/volumes', async (req, res) => {
   let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
   let data = await callDockerAPI(req.path);
   console.info(`${res.statusCode} ${ip} API ${req.path}`);
@@ -224,19 +232,34 @@ app.post('/containers/:containerId/:action', async (req, res) => {
   else if (action == 'exec') {
     let commandId = req.body.cmd;
 
-    let quickCmd = quickCommands.find(commandObj => commandObj.id == commandId);
-    if (!quickCmd) {
+    let quickCmdObj = quickCommands.find(commandObj => commandObj.id == commandId);
+    if (!quickCmdObj) {
       console.error(`404 ${ip} ${req.method} ${req.path}`);
       console.debug(`Command not found when looking for: ${commandId}`);
       res.status(404);
       res.send('Command not found.');
     }
     else {
-      let result = "";
-
+      console.debug(`Executing command '${quickCmdObj.cmd}'`);
+      let execCmd = quickCmdObj.cmd.split(' ');  // for 'ls -l', exec wants ["ls", "-l"]
+      let execObj = {
+        'Tty': true,
+        'AttachStdin': false,
+        'AttachStdout': true,
+        'AttachStderr': true,
+        'Cmd': execCmd
+      };  // See: https://docs.docker.com/engine/api/v1.41/#operation/ContainerExec
+      let execReply = await callDockerAPI(`/containers/${containerId}/${action}`, 'POST', encodeURIComponent(JSON.stringify(execObj)));
+      console.debug(execReply);
+      let execId = JSON.parse(execReply).Id;
+      let startObj = {
+        'Detach': false,
+        'Tty': true
+      };  // See: https://docs.docker.com/engine/api/v1.41/#operation/ExecStart
+      let startReply = await callDockerAPI(`/exec/${execId}/start`, 'POST', encodeURIComponent(JSON.stringify(startObj)));
+      console.debug(startReply);
       console.info(`200 ${ip} ${req.method} ${req.path}`);
-      console.debug(`Executing command '${quickCmd.cmd}'`);
-      res.send(`${result || 'Command complete.'}`);
+      res.send(`${startReply.replace(/\n/, '<br>')}`);
     }
   }
   else {
