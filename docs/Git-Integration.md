@@ -24,7 +24,7 @@ If you see an error message instead, check the container logs with `docker logs`
 >docker run -d \
 >  -p 8088:8088 \
 >  -v /var/run/docker.sock:/var/run/docker.sock \
->  -v ${PWD}/data:/app/data \
+>  -v cc_data:/app/data \
 >  -v /etc/ssl:/etc/ssl \
 >  davescodemusings/container-central:latest
 >```
