@@ -95,8 +95,9 @@ function callDockerAPI(path, method = 'GET', body = '') {
     req.on('error', err => {
       reject(err);
     });
-
-    req.write(body);
+    if (body) {
+      req.write(body);
+    }
     req.end();
   });
 }
