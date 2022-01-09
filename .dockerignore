@@ -1,0 +1,10 @@
+Dockerfile
+data/config.json
+data/quick_commands.json
+data/compose/.git
+data/compose/*
+*.sh
+docs
+node_modules
+package-lock.json
+*.log
