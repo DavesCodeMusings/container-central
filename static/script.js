@@ -106,29 +106,29 @@ async function imageControl(action, imageTag) {
 }
 
 /**
- * A wrapper for the /stacks up, down, restart API calls.
+ * A wrapper for the /projects up, down, restart API calls.
  * @param {string} action, one of: start, stop, restart.
- * @param {string} stackName, the project name for the stack.
+ * @param {string} projectName, the project name (i.e. projectName.yml).
  */
-async function stackControl(action, stackName) {
+async function projectControl(action, projectName) {
   switch (action) {
     case 'git-pull':
       showAlert('Pulling compose files from git repository...');
       break;
     case 'up':
-      showAlert(`Deploying ${stackName}...`);
+      showAlert(`Deploying ${projectName}...`);
       break;
     case 'down':
-      showAlert(`Stopping ${stackName}...`);
+      showAlert(`Stopping ${projectName}...`);
       break;
     case 'restart':
-      showAlert(`Redeploying ${stackName}...`);
+      showAlert(`Redeploying ${projectName}...`);
       break;
     default:
-      showAlert(`${stackName} ${action}`);
+      showAlert(`${projectName} ${action}`);
   }
   if (action == 'git-pull') {
-    let response = await fetch(`/stacks/git`, { method: 'POST' });
+    let response = await fetch(`/projects/git`, { method: 'POST' });
     if (response.status == 200) {
       showAlert('Compose files are up to date.');
     }
@@ -136,26 +136,26 @@ async function stackControl(action, stackName) {
       let msg = await response.text();
       showAlert(`Git pull error: ${msg}`);
     }
-    viewStacks();
+    viewProjects();
   }
   else {
-    let response = await fetch(`/stacks/${stackName}/${action}`, { method: 'POST' });
+    let response = await fetch(`/projects/${projectName}/${action}`, { method: 'POST' });
     if (response.status == 200) {
       switch (action) {
         case 'up':
-          showAlert(`${stackName} deployed.`);
+          showAlert(`${projectName} deployed.`);
           break;
         case 'down':
-          showAlert(`${stackName} is down.`);
+          showAlert(`${projectName} is down.`);
           break;
         case 'restart':
-          showAlert(`${stackName} redeployed.`);
+          showAlert(`${projectName} redeployed.`);
           break;
         default:
-          showAlert(`${stackName} ${action} complete.`);
+          showAlert(`${projectName} ${action} complete.`);
       }
     }
-    viewStacks();
+    viewProjects();
   }
 }
 
@@ -181,8 +181,8 @@ async function viewInfo() {
         </a>
       </span>
       <span class="grouping">
-        <a href="javascript:viewStacks()" title="Stacks">
-          <img alt="Stacks:" src="icons/format-list-bulleted-type.svg"> {{numStacks}}
+        <a href="javascript:viewProjects()" title="Projects">
+          <img alt="Projects:" src="icons/format-list-bulleted-type.svg"> {{numProjects}}
         </a>
       </span>
       <span class="grouping">
@@ -215,16 +215,16 @@ async function viewInfo() {
     showAlert(`API request failed.`);
   }
 
-  // Docker Compose "stacks" are not part of the /info API call.
-  console.info(`Fetching stacks from ${window.location.origin}/stacks`);
+  // Docker Compose projects are not part of the /info API call.
+  console.info(`Fetching projects from ${window.location.origin}/projects`);
   try {
-    let stacksResponse = await fetch(window.location.origin + '/stacks');
-    if (stacksResponse.status != 200) {
-      console.error(`${stacksResponse.status} received while fetching ${window.location.origin}/stacks`);
+    let projectsResponse = await fetch(window.location.origin + '/projects');
+    if (projectsResponse.status != 200) {
+      console.error(`${projectsResponse.status} received while fetching ${window.location.origin}/projects`);
     }
     else {
-      let stacksInfo = await stacksResponse.json();
-      html = html.replace(/{{numStacks}}/, stacksInfo.length);
+      let projectsInfo = await projectsResponse.json();
+      html = html.replace(/{{numProjects}}/, projectsInfo.length);
     }
   }
   catch {
@@ -267,7 +267,7 @@ async function viewContainers() {
       <p>{{Id}}</p>
       <p><img alt="Created:" src="icons/calendar-clock.svg"> {{createDate}}. {{Status}}</p>
       <p><img alt="Image:" src="icons/file-outline.svg"> <a href="javascript:viewImages('{{imageTag}}');" title="Jump to Image">{{imageTag}}</a></p>
-      {{stackInfo}}
+      {{projectInfo}}
       {{quickCommands}}
     </details>
   `;
@@ -372,11 +372,11 @@ async function viewContainers() {
 
     // Docker Compose puts information in labels, but not all containers are started using docker-compose.
     if (container.Labels && container.Labels['com.docker.compose.project']) {
-      let stackName = container.Labels['com.docker.compose.project'];
-      htmlChunk = htmlChunk.replace(/{{stackInfo}}/, `<p><img alt="Stack:" src="icons/format-list-bulleted-type.svg"> <a href="javascript:viewStacks('${stackName}');" title="Jump to Stack">${stackName}</a></p>`);
+      let projectName = container.Labels['com.docker.compose.project'];
+      htmlChunk = htmlChunk.replace(/{{projectInfo}}/, `<p><img alt="Project:" src="icons/format-list-bulleted-type.svg"> <a href="javascript:viewProjects('${projectName}');" title="Jump to Project">${projectName}</a></p>`);
     }
     else {
-      htmlChunk = htmlChunk.replace(/{{stackInfo}}/, '');
+      htmlChunk = htmlChunk.replace(/{{projectInfo}}/, '');
     }
 
     // Some containers may have a pre-defined list of quick commands to choose from.
@@ -479,38 +479,38 @@ async function viewImages(tagOfInterest) {
 }
 
 /**
- * Retrieve data from the /stacks API call and format as HTML for viewing. 
+ * Retrieve data from the /projects API call and format as HTML for viewing. 
  */
-async function viewStacks(projectOfInterest) {
-  let html = `<h2>Stacks <img alt="refresh" class="control-aside" src="icons/refresh.svg" onclick="viewStacks();"></h2>`;
+async function viewProjects(projectOfInterest) {
+  let html = `<h2>Projects <img alt="refresh" class="control-aside" src="icons/refresh.svg" onclick="viewProjects();"></h2>`;
   let template = `
     <details id="{{project}}">
-      <summary><img alt="stack icon" src='icons/format-list-bulleted-type.svg'> {{project}}
+      <summary><img alt="project icon" src='icons/format-list-bulleted-type.svg'> {{project}}
         <span class="popup-controls grouping">
-          <a href="javascript:stackControl('up', '{{project}}');" title="Deploy Stack"><img alt="Up" src="icons/arrow-up-thick.svg"></a>
-          <a href="javascript:stackControl('down', '{{project}}');" title="Remove Stack"><img alt="Up" src="icons/arrow-down-thick.svg"></a>
-          <a href="javascript:stackControl('restart', '{{project}}');" title="Restart Stack"><img alt="Up" src="icons/arrow-u-up-right-bold.svg"></a>
+          <a href="javascript:projectControl('up', '{{project}}');" title="Deploy Project"><img alt="Up" src="icons/arrow-up-thick.svg"></a>
+          <a href="javascript:projectControl('down', '{{project}}');" title="Remove Project"><img alt="Up" src="icons/arrow-down-thick.svg"></a>
+          <a href="javascript:projectControl('restart', '{{project}}');" title="Restart Project"><img alt="Up" src="icons/arrow-u-up-right-bold.svg"></a>
         </span>
       </summary>
       <pre>{{content}}</pre>
     </details>
   `;
 
-  console.info(`Fetching stack info from ${window.location.origin}/stacks`);
+  console.info(`Fetching project info from ${window.location.origin}/projects`);
   try {
-    let stacksResponse = await fetch(window.location.origin + '/stacks');
-    if (stacksResponse.status != 200) {
-      console.error(`${stacksResponse.status} received while fetching ${window.location.origin}/stacks`);
+    let projectsResponse = await fetch(window.location.origin + '/projects');
+    if (projectsResponse.status != 200) {
+      console.error(`${projectsResponse.status} received while fetching ${window.location.origin}/projects`);
     }
     else {
-      let stackData = await stacksResponse.json();
-      console.debug(`${stackData.length} stack(s) retrieved.`);
+      let projectData = await projectsResponse.json();
+      console.debug(`${projectData.length} project(s) retrieved.`);
 
-      if (stackData.length == 0) {
-        html += `<p>No stacks defined.</p>`;
+      if (projectData.length == 0) {
+        html += `<p>No projects defined.</p>`;
       }
       else {
-        stackData.forEach(dockerCompose => {
+        projectData.forEach(dockerCompose => {
           dockerCompose.project = dockerCompose.filename.replace(/.yml/, '');
           dockerCompose.lines = dockerCompose.content.split('\n').length;
           html += template.replace(/{{\w+}}/g, (match) => {
@@ -522,7 +522,7 @@ async function viewStacks(projectOfInterest) {
       }
     }
 
-    html += `<p><img alt="git-pull" class="control-aside" onclick="stackControl('git-pull');" src="icons/source-branch.svg"><p>`;
+    html += `<p><img alt="git-pull" class="control-aside" onclick="projectControl('git-pull');" src="icons/source-branch.svg"><p>`;
     document.getElementsByTagName('main')[0].innerHTML = html;
   }
   catch {
@@ -541,7 +541,7 @@ async function viewVolumes() {
   let html = `<h2>Volumes<img alt="refresh" class="control-aside" src="icons/refresh.svg" onclick="viewVolumes();"></h2>`;
   let template = `
     <details>
-      <summary><img alt="generic stack icon" src='icons/database-outline.svg'> {{Name}}</summary>
+      <summary><img alt="generic project icon" src='icons/database-outline.svg'> {{Name}}</summary>
       <p><img alt="Created:" src="icons/calendar-clock.svg"> {{timeStamp}}</p>
       <p><img alt="Mounted:" src="icons/file-tree-outline.svg"> {{Mountpoint}}</p>
       </p>
@@ -585,7 +585,7 @@ async function viewConfig() {
       </fieldset>
 
       <fieldset>
-        <legend>Stack Deployment</legend>
+        <legend>Project Deployment</legend>
         <label for="compose-binary">Path to docker-compose:</label>
         <input id="compose-binary" name="composeBinary" type="text" placeholder="/usr/local/bin/docker-compose" value="{{composeBinary}}">
       </fieldset>

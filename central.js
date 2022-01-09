@@ -151,20 +151,20 @@ app.get('/info', async (req, res) => {
   res.send(data);
 });
 
-app.get('/stacks', (req, res) => {
+app.get('/projects', (req, res) => {
   let files = readdirSync(composeProjectsPath).filter(file => file.endsWith('.yml'));
   let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-  let stackInfo = [];
+  let projectInfo = [];
   files.forEach(file => {
     let info = {
       filename: file,
       content: readFileSync(new URL(file, composeProjectsPath), { encoding: 'utf8' })
     }
-    stackInfo.push(info);
+    projectInfo.push(info);
   });
   console.info(`200 ${ip} ${req.method} ${req.path}`);
   res.setHeader("Content-Type", "application/json");
-  res.send(JSON.stringify(stackInfo, null, 2));
+  res.send(JSON.stringify(projectInfo, null, 2));
 });
 
 app.get('/volumes', async (req, res) => {
@@ -271,7 +271,7 @@ app.post('/containers/:containerId/:action', async (req, res) => {
   }
 });
 
-app.post('/stacks/git', (req, res) => {
+app.post('/projects/git', (req, res) => {
   let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
   if (!config.gitUrl) {
     console.error(`404 ${ip} ${req.method} ${req.path}`);
@@ -337,8 +337,8 @@ app.post('/images/pull/:imageTag', async (req, res) => {
   res.send(reply);
 });
 
-app.post('/stacks/:stackName/:action', (req, res) => {
-  let stackName = req.params['stackName'];
+app.post('/projects/:projectName/:action', (req, res) => {
+  let projectName = req.params['projectName'];
   let action = req.params['action'];
 
   if (action != 'down' && action != 'up' && action != 'restart') {
@@ -346,10 +346,10 @@ app.post('/stacks/:stackName/:action', (req, res) => {
     res.send(`"Unsupported action: ${action}."`)
   }
   else {
-    if (!existsSync(join(composeProjectsPath.pathname, stackName + '.yml'))) {
-      console.error(`File not found: ${join(composeProjectsPath.pathname, stackName + '.yml')}`);
+    if (!existsSync(join(composeProjectsPath.pathname, projectName + '.yml'))) {
+      console.error(`File not found: ${join(composeProjectsPath.pathname, projectName + '.yml')}`);
       res.status(404);
-      res.send(`"No such file: ${stackName}.yml"`);
+      res.send(`"No such file: ${projectName}.yml"`);
     }
     else {
       if (!existsSync(config.composeBinary)) {
@@ -359,9 +359,9 @@ app.post('/stacks/:stackName/:action', (req, res) => {
       }
       else {
         if (action == 'up') {
-          exec(`${config.composeBinary} -f ${stackName}.yml -p ${stackName} up -d`, { cwd: composeProjectsPath }, (err, stdout, stderr) => {
+          exec(`${config.composeBinary} -f ${projectName}.yml -p ${projectName} up -d`, { cwd: composeProjectsPath }, (err, stdout, stderr) => {
             if (err) {
-              console.error(`Command failed: ${config.composeBinary} -f ${stackName}.yml -p ${stackName} up -d`);
+              console.error(`Command failed: ${config.composeBinary} -f ${projectName}.yml -p ${projectName} up -d`);
               console.debug(stderr);
               res.status(404);
               res.send(`"Deployment failed."`);
@@ -372,15 +372,15 @@ app.post('/stacks/:stackName/:action', (req, res) => {
           });
         }
         else {
-          exec(`${config.composeBinary} -f ${stackName}.yml -p ${stackName} ${action}`, { cwd: composeProjectsPath }, (err, stdout, stderr) => {
+          exec(`${config.composeBinary} -f ${projectName}.yml -p ${projectName} ${action}`, { cwd: composeProjectsPath }, (err, stdout, stderr) => {
             if (err) {
-              console.error(`Command failed: ${config.composeBinary} -f ${stackName}.yml -p ${stackName} ${action}`);
+              console.error(`Command failed: ${config.composeBinary} -f ${projectName}.yml -p ${projectName} ${action}`);
               console.debug(stderr);
               res.status(404);
               res.send(`"Action failed: ${action}"`);
             }
             else {
-              console.debug(`Command succeeded: ${config.composeBinary} -f ${stackName}.yml -p ${stackName} ${action}`);
+              console.debug(`Command succeeded: ${config.composeBinary} -f ${projectName}.yml -p ${projectName} ${action}`);
               console.debug(stderr);
               res.send(`"Successful ${action}"`);
             }
