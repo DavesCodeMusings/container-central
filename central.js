@@ -10,7 +10,7 @@ import { readFileSync, stat as _stat, mkdirSync, readdirSync, existsSync, writeF
 import { join } from 'path';
 import { request } from 'http';
 
-const configFile = 'config.json'
+const configFile = join('data', 'config.json');
 var config = {};
 try {
   config = JSON.parse(readFileSync(new URL(configFile, import.meta.url), 'utf-8'));
@@ -133,6 +133,7 @@ app.get('/containers', async (req, res) => {
   let path = req.path + '/json?all="true"';  // only running containers without all="true"
   let data = await callDockerAPI(path);
   console.info(`${res.statusCode} ${ip} API ${path}`);
+  res.setHeader('Content-Type', 'application/json');
   res.send(data);
 });
 
@@ -141,6 +142,7 @@ app.get('/images', async (req, res) => {
   let path = req.path + '/json';
   let data = await callDockerAPI(path);
   console.info(`${res.statusCode} ${ip} API ${path}`);
+  res.setHeader('Content-Type', 'application/json');
   res.send(data);
 });
 
@@ -171,6 +173,7 @@ app.get('/volumes', async (req, res) => {
   let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
   let data = await callDockerAPI(req.path);
   console.info(`${res.statusCode} ${ip} API ${req.path}`);
+  res.setHeader('Content-Type', 'application/json');
   res.send(data);
 });
 
@@ -277,7 +280,7 @@ app.post('/projects/git', (req, res) => {
     console.error(`404 ${ip} ${req.method} ${req.path}`);
     console.debug(`gitUrl is not configured in ${configFile}`);
     res.status(404);
-    res.json('Git URL not configured.');
+    res.send('Git URL not configured.');
   }
   else {
     let execOptions = { cwd: composeProjectsPath };
@@ -291,11 +294,11 @@ app.post('/projects/git', (req, res) => {
           console.error(`500 ${ip} ${req.method} ${req.path}`);
           console.debug(stderr);
           res.status(500);
-          res.json('git clone failed.');
+          res.send('git clone failed.');
         }
         else {
           console.info(`200 ${ip} ${req.method} ${req.path}`);
-          res.json('git clone successful.');
+          res.send('git clone successful.');
         }
       });
     }
@@ -309,7 +312,7 @@ app.post('/projects/git', (req, res) => {
         }
         else {
           console.info(`200 ${ip} ${req.method} ${req.path}`);
-          res.json('git pull successful.');
+          res.send('git pull successful.');
         }
       });
     }
