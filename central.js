@@ -104,28 +104,7 @@ function callDockerAPI(path, method = 'GET', body = '') {
 
 const app = express();
 app.use(urlencoded({ extended: true }));
-
-/* Static content for the web client. */
-app.get('/', (req, res) => {
-  res.setHeader('Content-Type', 'text/html');
-  res.send(readFileSync('static/index.html'));
-});
-
-app.get('/default.css', (req, res) => {
-  res.setHeader('Content-Type', 'text/css');
-  res.send(readFileSync('static/default.css'));
-});
-
-app.get('/icons/:filename', (req, res) => {
-  res.setHeader('Content-Type', 'image/svg+xml');
-  res.send(readFileSync(`static/icons/${req.params['filename']}`));
-});
-
-app.get('/script.js', (req, res) => {
-  res.setHeader('Content-Type', 'application/javascript');
-  res.send(readFileSync('static/script.js'));
-});
-
+app.use(express.static(new URL('static', import.meta.url).pathname));
 
 /* API routes for main menu items */
 app.get('/containers', async (req, res) => {
