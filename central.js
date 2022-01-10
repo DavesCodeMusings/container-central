@@ -104,7 +104,7 @@ function callDockerAPI(path, method = 'GET', body = '') {
 
 const app = express();
 app.use(urlencoded({ extended: true }));
-app.use(express.static(new URL('static', import.meta.url).pathname));
+app.use(express.static(new URL('client', import.meta.url).pathname));
 
 /* API routes for main menu items */
 app.get('/containers', async (req, res) => {
