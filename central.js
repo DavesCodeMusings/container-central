@@ -129,6 +129,7 @@ app.get('/info', async (req, res) => {
   let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
   let data = await callDockerAPI(req.path);
   console.info(`${res.statusCode} ${ip} API ${req.path}`);
+  res.setHeader('Content-Type', 'application/json');
   res.send(data);
 });
 
