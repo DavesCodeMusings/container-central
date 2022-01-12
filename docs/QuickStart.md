@@ -1,9 +1,7 @@
 # Container Central Quick Start
 
 ## Running
-On Raspberry Pi, the easiest way to run Container Central is to use the Docker container.
-
-Start the container using a Docker volume for persistent data, like this:
+On Raspberry Pi, the easiest way to run Container Central is to use the Docker container. Start the container using a Docker volume for persistent data, like this:
 
 ```
 docker run -d \
@@ -12,6 +10,17 @@ docker run -d \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -v cc_data:/app/data \
   davescodemusings/container-central:latest
+```
+
+For WSL2 and other x86-based systems, use the x86 tag, like this:
+
+```
+docker run -d \
+  --name container-central \
+  -p 8088:8088 \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v cc_data:/app/data \
+  davescodemusings/container-central:x86
 ```
 
 ## The Home Screen
