@@ -350,8 +350,11 @@ async function viewContainers() {
       case 'paused':
         stateIcon = 'pause-circle.svg';
         break;
+      case 'created':
+        stateIcon = 'dots-horizontal-circle-outline.svg';
+        break;
       default:
-        stateIcon = 'question.svg';
+        stateIcon = 'circle-outline.svg';
     }
     htmlChunk = htmlChunk.replace(/{{stateIcon}}/, stateIcon);
 
