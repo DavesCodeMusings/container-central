@@ -196,7 +196,7 @@ async function viewInfo() {
     <p>
       <img alt="Host" src="icons/memory.svg"> {{NCPU}} CPU / {{ram}}G<br>
       <span class="grouping">
-        <a href="javascript:viewContainers()" title="Containers">
+        <a href="#containers" onclick="viewContainers();" title="Containers">
           <img alt="Running:" src="icons/play.svg"> {{ContainersRunning}}/{{Containers}}
           <img alt="Paused:" src="icons/pause.svg"> {{ContainersPaused}}
           <img alt="Stopped:" src="icons/stop.svg"> {{ContainersStopped}}
@@ -204,17 +204,17 @@ async function viewInfo() {
       </span>
       <br class="optional">
       <span class="grouping">
-        <a href="javascript:viewImages()" title="Images">
+        <a href="#images" onclick="viewImages();" title="Images">
           <img alt="Images:" src="icons/file-outline.svg"> {{numImages}}
         </a>
       </span>
       <span class="grouping">
-        <a href="javascript:viewProjects()" title="Projects">
+        <a href="#projects" onclick="viewProjects();" title="Projects">
           <img alt="Projects:" src="icons/format-list-bulleted-type.svg"> {{numProjects}}
         </a>
       </span>
       <span class="grouping">
-        <a href="javascript:viewVolumes()" title="Volumes">
+        <a href="#volumes" onclick="viewVolumes();" title="Volumes">
           <img alt="Volumes:" src="icons/database-outline.svg"> {{numVolumes}}
         </a>
       </span>
