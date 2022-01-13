@@ -309,7 +309,7 @@ async function viewContainers() {
         </span>
       </summary>
       <p>{{Id}}</p>
-      <p><img alt="Created:" src="icons/calendar-clock.svg"> {{createDate}}. {{Status}}</p>
+      <p><img alt="Created:" src="icons/calendar-clock.svg"> {{createDate}}. {{Status}}.</p>
       <p><img alt="Image:" src="icons/file-outline.svg"> <a href="javascript:viewImages('{{imageTag}}');" title="Jump to Image">{{imageTag}}</a></p>
       {{projectInfo}}
       {{quickCommands}}
