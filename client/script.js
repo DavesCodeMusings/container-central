@@ -205,7 +205,7 @@ async function viewInfo() {
       <br class="optional">
       <span class="grouping">
         <a href="javascript:viewImages()" title="Images">
-          <img alt="Images:" src="icons/file-outline.svg"> {{Images}}
+          <img alt="Images:" src="icons/file-outline.svg"> {{numImages}}
         </a>
       </span>
       <span class="grouping">
@@ -237,6 +237,22 @@ async function viewInfo() {
 
       // Make MemTotal more user-friendly with units in GiBytes.
       html = html.replace(/{{ram}}/, (info.MemTotal / 1024 / 1024 / 1024).toFixed(2));
+    }
+  }
+  catch {
+    showAlert(`API request failed.`);
+  }
+
+  // The count of images from /info includes dangling images, so fetch from /images instead.
+  console.info(`Fetching images from ${window.location.origin}/images`);
+  try {
+    let imagesResponse = await fetch(window.location.origin + '/images');
+    if (imagesResponse.status != 200) {
+      console.error(`${imagesResponse.status} received while fetching ${window.location.origin}/images`);
+    }
+    else {
+      let imagesInfo = await imagesResponse.json();
+      html = html.replace(/{{numImages}}/, imagesInfo.length);
     }
   }
   catch {
