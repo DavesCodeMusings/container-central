@@ -1,5 +1,5 @@
 # Container Central
-A totally minimalist, not quite ready for prime time, but still pretty good solution for managing Docker containers on Raspberry Pi.
+A totally minimalist, not quite ready for prime time, but still pretty good solution for managing Docker containers on Raspberry Pi and WSL2.
 
 ## What is it?
 Container Central is a web-based management tool for Docker containers that focuses on the needs of the home LAN user. My target is a Raspberry Pi running Docker Community Edition and a handful of containers. That's it.
