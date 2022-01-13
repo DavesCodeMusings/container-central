@@ -11,23 +11,26 @@
   <script src="script.js"></script>
 </head>
 
-<!-- The /images API call allows image data to be cached and used when matching containers to image names. -->
 <body>
   <div id="alert" onclick="this.style.display='none';" style="cursor: pointer;"><!-- Alerts will appear here. --></div>
 
+  <!--
+     The #anchor href is used in the <nav> links to allow bookmarking and deep linking. And, the #anchor will not trigger a page reload.
+     This is good, because only changed content loads. But, it means an onclick is needed switch the <main> content to the correct view.
+  -->
   <nav>
     <p><span class="nav-heading">Container Central</span><br>
-      <a href="javascript:viewInfo()"><img alt="home" src="icons/home-outline.svg"><span class="label">Home</span></a>
-      <a href="javascript:viewContainers();"><img alt="container" src="icons/cube-outline.svg"><span class="label">Containers</span></a>
-      <a href="javascript:viewImages();"><img alt="image" src="icons/file-outline.svg"><span class="label">Images</span></a>
-      <a href="javascript:viewProjects();"><img alt="project" src="icons/format-list-bulleted-type.svg"><span class="label">Projects</span></a>
-      <a href="javascript:viewVolumes();"><img alt="volume" src="icons/database-outline.svg"><span class="label">Volumes</span></a>
-      <a href="javascript:viewConfig();"><img alt="gear" src="icons/cog-outline.svg"><span class="label">Configuration</span></a>
+      <a href="#home" onclick="viewInfo();"><img alt="home" src="icons/home-outline.svg"><span class="label">Home</span></a>
+      <a href="#containers" onclick="viewContainers();"><img alt="container" src="icons/cube-outline.svg"><span class="label">Containers</span></a>
+      <a href="#images" onclick="viewImages();"><img alt="image" src="icons/file-outline.svg"><span class="label">Images</span></a>
+      <a href="#projects" onclick="viewProjects();"><img alt="project" src="icons/format-list-bulleted-type.svg"><span class="label">Projects</span></a>
+      <a href="#volumes" onclick="viewVolumes();"><img alt="volume" src="icons/database-outline.svg"><span class="label">Volumes</span></a>
+      <a href="#config" onclick="viewConfig();"><img alt="gear" src="icons/cog-outline.svg"><span class="label">Configuration</span></a>
     </p>
   </nav>
 
   <main>
-    <script>viewInfo();</script>
+    <script>selectViewFromURL();</script> <!-- Only runs on initial page load and any manual refreshes. -->
   </main>
 </body>
 

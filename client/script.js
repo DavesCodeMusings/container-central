@@ -1,4 +1,32 @@
 /**
+ * Load main content based on #hash part of URL. (e.g. http://host#images displays image information.)
+ * Called when the page loads, this allows bookmarks or external links to bring up a specific view.
+ */
+function selectViewFromURL() {
+  let view = document.location.hash;
+  console.debug("Requested view is:", view);
+  switch (view) {
+    case '#containers':
+      viewContainers();
+      break;
+    case '#images':
+      viewImages();
+      break;
+    case '#projects':
+      viewProjects();
+      break;
+    case '#volumes':
+      viewVolumes();
+      break;
+    case '#config':
+      viewConfig();
+      break;
+    default:
+      viewInfo();
+  }
+}
+
+/**
  * Show a pop-up message similar to alert(msg) but styled with css and auto-closing.
  * @param {string} msg, the text to display.
  */
