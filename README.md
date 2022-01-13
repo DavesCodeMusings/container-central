@@ -24,13 +24,9 @@ But please remeber, this is a hobby, not a business venture.
 ## Are there screenshots or what???
 You betcha!
 
-(Mobile device screenshots were taken in dark mode. Yes! There is a dark mode.)
+(Mobile device screenshots were taken in dusk mode.)
 
 ### Mobile Device...
-
-![image](https://github.com/DavesCodeMusings/container-central/blob/main/docs/screenshots/home-mobile-dark.png)
-
-_Home screen on a simulated iPhone SE_
 
 ![image](https://github.com/DavesCodeMusings/container-central/blob/main/docs/screenshots/containers-mobile-dark.png)
 
