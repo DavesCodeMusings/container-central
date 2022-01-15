@@ -297,10 +297,10 @@ async function viewInfo() {
 /**
  * Retrieve data from the /containers API call and format as HTML for viewing. 
  */
-async function viewContainers() {
+async function viewContainers(containerOfInterest) {
   let html = `<h2>Containers <img alt="refresh" class="control-aside" src="icons/refresh.svg" onclick="viewContainers();"></h2>`;
   let template = `
-    <details>
+    <details id="{{name}}">
       <summary><img alt="{{State}}" src="icons/{{stateIcon}}"> {{name}}
         <span class="popup-controls grouping">
           <a href="javascript:containerControl('stop', '{{Id}}');" title="Stop Container"><img alt="stop" src="icons/stop.svg"></a>
@@ -371,7 +371,7 @@ async function viewContainers() {
     showAlert(`API request failed.`);
     console.error(`API call 'GET /containers' failed. ${ex}`);
   }
-  
+
   containerData.forEach(container => {
     let htmlChunk = template;
 
@@ -403,7 +403,7 @@ async function viewContainers() {
     htmlChunk = htmlChunk.replace(/{{stateIcon}}/, stateIcon);
 
     // Container names come with a leading /, but look better without it.
-    htmlChunk = htmlChunk.replace(/{{name}}/, container.Names[0].replace(/\//, ''));
+    htmlChunk = htmlChunk.replace(/{{name}}/g, container.Names[0].replace(/\//, ''));
 
     // The API uses unix epoch time, but people read date-time stamps.
     htmlChunk = htmlChunk.replace(/{{createDate}}/, new Date(container.Created * 1000).toLocaleString());
@@ -427,7 +427,7 @@ async function viewContainers() {
     }
 
     // Some containers may have a pre-defined list of quick commands to choose from.
-    htmlChunk = htmlChunk.replace(/{{quickCommands}}/, (match) =>{
+    htmlChunk = htmlChunk.replace(/{{quickCommands}}/, (match) => {
       paletteHTML = '';
       quickCommands.forEach((command) => {
         if (container.Names[0].includes(command.filter)) {
@@ -445,6 +445,10 @@ async function viewContainers() {
   }
 
   document.getElementsByTagName('main')[0].innerHTML = html;
+
+  if (containerOfInterest) {
+    document.getElementById(containerOfInterest).open = true;
+  }
 }
 
 
@@ -539,42 +543,82 @@ async function viewProjects(projectOfInterest) {
           <a href="javascript:projectControl('restart', '{{project}}');" title="Restart Project"><img alt="Up" src="icons/arrow-u-up-right-bold.svg"></a>
         </span>
       </summary>
-      <pre>{{content}}</pre>
+      {{containers}}
+      {{composeFile}}
+      <pre>{{contents}}</pre>
     </details>
   `;
 
+  // Fetch /containers to use for associating containers with their projects.
+  console.info(`Fetching container info from ${window.location.origin}/containers`);
+  let containerData = [];
+  try {
+    let containersResponse = await fetch(window.location.origin + '/containers');
+    if (containersResponse.status != 200) {
+      showAlert(`API request failed.`);
+      console.error(`${containersResponse.status} received while fetching ${window.location.origin}/containers`);
+    }
+    else {
+      containerData = await containersResponse.json();
+      console.debug(`${containerData.length} container(s) retrieved.`);
+    }
+  }
+  catch (ex) {
+    showAlert(`API request failed.`);
+    console.error(`API call 'GET /containers' failed. ${ex}`);
+  }
+
+  // Fetch /projects to find the YAML file that defines them.
   console.info(`Fetching project info from ${window.location.origin}/projects`);
+  let projectData = [];
   try {
     let projectsResponse = await fetch(window.location.origin + '/projects');
     if (projectsResponse.status != 200) {
       console.error(`${projectsResponse.status} received while fetching ${window.location.origin}/projects`);
     }
     else {
-      let projectData = await projectsResponse.json();
+      projectData = await projectsResponse.json();
       console.debug(`${projectData.length} project(s) retrieved.`);
-
-      if (projectData.length == 0) {
-        html += `<p>No projects defined.</p>`;
-      }
-      else {
-        projectData.forEach(dockerCompose => {
-          dockerCompose.project = dockerCompose.filename.replace(/.yml/, '');
-          dockerCompose.lines = dockerCompose.content.split('\n').length;
-          html += template.replace(/{{\w+}}/g, (match) => {
-            let property = match.replace(/^{{/, '').replace(/}}$/, '');
-            return dockerCompose[property] || match;
-          });
-        });
-        document.getElementsByTagName('main')[0].innerHTML = html;
-      }
     }
-
-    html += `<p><img alt="git-pull" class="control-aside" onclick="projectControl('git-pull');" src="icons/source-branch.svg"><p>`;
-    document.getElementsByTagName('main')[0].innerHTML = html;
   }
   catch {
     showAlert(`API request failed.`);
   }
+
+  if (projectData.length == 0) {
+    html += `<p>No projects defined.</p>`;
+  }
+  else {
+    projectData.forEach(dockerCompose => {
+      let htmlChunk = template;
+      dockerCompose.contents = dockerCompose.yaml.join('\n');
+      htmlChunk = htmlChunk.replace(/{{\w+}}/g, (match) => {
+        let property = match.replace(/^{{/, '').replace(/}}$/, '');
+        return dockerCompose[property] || match;
+      });
+
+      // Show a list of containers associated with the project.
+      htmlChunk = htmlChunk.replace(/{{containers}}/, (match) => {
+        containerHTML = '';
+        console.debug('Project:', dockerCompose.project);
+        containerData.forEach(container => {
+          let projectLabel = container.Labels['com.docker.compose.project'];
+          if (typeof projectLabel !== 'undefined' && projectLabel == dockerCompose.project) {
+            let containerName = container.Names[0].replace(/^\//, '');  // Remove leading slash for better readability.
+            containerHTML += `<p><a href="#containers" onclick="viewContainers('${containerName}')" title="Jump to Container"><img alt="container" src="icons/cube-outline.svg"> ${containerName}</a></p>`;
+          }
+        });
+        return containerHTML || '<p>Not deployed.</p>';
+      });
+
+      htmlChunk = htmlChunk.replace(/{{composeFile}}/, `<p><img alt="yaml" src="icons/file-code-outline.svg"> ${dockerCompose.filename}</p>`);
+
+      html += htmlChunk;
+    });
+  }
+
+  html += `<p><img alt="git-pull" class="control-aside" onclick="projectControl('git-pull');" src="icons/source-branch.svg"><p>`;
+  document.getElementsByTagName('main')[0].innerHTML = html;
 
   if (projectOfInterest) {
     document.getElementById(projectOfInterest).open = true;

@@ -139,8 +139,9 @@ app.get('/projects', (req, res) => {
   let projectInfo = [];
   files.forEach(file => {
     let info = {
+      project: file.replace(/.yml/, ''),
       filename: file,
-      content: readFileSync(new URL(file, composeProjectsPath), { encoding: 'utf8' })
+      yaml: readFileSync(new URL(file, composeProjectsPath), { encoding: 'utf8' }).split('\n')
     }
     projectInfo.push(info);
   });

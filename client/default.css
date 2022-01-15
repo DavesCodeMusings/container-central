@@ -30,7 +30,7 @@ body {
   padding: 2px;
 }
 
-details > p {
+details > p, details > pre {
   font-size: 12pt;
   line-height: normal;
   margin-left: 2em;
@@ -156,8 +156,6 @@ pre {
   border: 1px solid black;
   border-radius: 5px;
   color: dimgray;
-  font-size: 12pt;
-  line-height: normal;
   max-width: 100%;
   overflow: auto;
   padding: 0.2em;
