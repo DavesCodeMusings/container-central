@@ -544,8 +544,10 @@ async function viewProjects(projectOfInterest) {
         </span>
       </summary>
       {{containers}}
-      {{composeFile}}
-      <pre>{{contents}}</pre>
+      <details>
+        <summary>{{composeFile}}</summary>
+        <pre>{{contents}}</pre>
+      </details>
     </details>
   `;
 

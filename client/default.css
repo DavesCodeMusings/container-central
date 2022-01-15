@@ -30,14 +30,14 @@ body {
   padding: 2px;
 }
 
-details > p, details > pre {
+details > p, details > details {
   font-size: 12pt;
   line-height: normal;
   margin-left: 2em;
   margin-top: 0;
 }
 
-details > p img {
+details > p img, details > details img {
   height: 18px;  /* shrink to fit with smaller font in details */
   width: auto;
 }
@@ -156,6 +156,8 @@ pre {
   border: 1px solid black;
   border-radius: 5px;
   color: dimgray;
+  font-size: 12pt;
+  line-height: normal;
   max-width: 100%;
   overflow: auto;
   padding: 0.2em;
