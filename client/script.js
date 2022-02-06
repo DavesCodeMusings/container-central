@@ -3,22 +3,34 @@
  * Called when the page loads, this allows bookmarks or external links to bring up a specific view.
  */
 function selectViewFromURL() {
-  let view = document.location.hash;
+  let hash = document.location.hash;
+  let view = '';
+  let focus = '';
+  let firstSeparator = hash.indexOf('/');
+  if (firstSeparator != -1) {
+    view = hash.substring(1, firstSeparator);  // Between leading # and the first /
+    focus = hash.substring(firstSeparator + 1);  // Between the first / and the end
+  }
+  else {
+    view = hash.substring(1);  // Chop off the leading #
+  }
   console.debug("Requested view is:", view);
+  console.debug("Focus is:", focus);
+
   switch (view) {
-    case '#containers':
-      viewContainers();
+    case 'containers':
+      viewContainers(focus);
       break;
-    case '#images':
-      viewImages();
+    case 'images':
+      viewImages(focus);
       break;
-    case '#projects':
-      viewProjects();
+    case 'projects':
+      viewProjects(focus);
       break;
-    case '#volumes':
+    case 'volumes':
       viewVolumes();
       break;
-    case '#config':
+    case 'config':
       viewConfig();
       break;
     default:
@@ -196,7 +208,7 @@ async function viewInfo() {
     <p>
       <img alt="Host" src="icons/memory.svg"> {{NCPU}} CPU / {{ram}}G<br>
       <span class="grouping">
-        <a href="#containers" onclick="viewContainers();" title="Containers">
+        <a href="#containers" title="Containers">
           <img alt="Running:" src="icons/play.svg"> {{ContainersRunning}}/{{Containers}}
           <img alt="Paused:" src="icons/pause.svg"> {{ContainersPaused}}
           <img alt="Stopped:" src="icons/stop.svg"> {{ContainersStopped}}
@@ -204,17 +216,17 @@ async function viewInfo() {
       </span>
       <br class="optional">
       <span class="grouping">
-        <a href="#images" onclick="viewImages();" title="Images">
+        <a href="#images" title="Images">
           <img alt="Images:" src="icons/file-outline.svg"> {{numImages}}
         </a>
       </span>
       <span class="grouping">
-        <a href="#projects" onclick="viewProjects();" title="Projects">
+        <a href="#projects" title="Projects">
           <img alt="Projects:" src="icons/format-list-bulleted-type.svg"> {{numProjects}}
         </a>
       </span>
       <span class="grouping">
-        <a href="#volumes" onclick="viewVolumes();" title="Volumes">
+        <a href="#volumes" title="Volumes">
           <img alt="Volumes:" src="icons/database-outline.svg"> {{numVolumes}}
         </a>
       </span>
@@ -310,7 +322,7 @@ async function viewContainers(containerOfInterest) {
       </summary>
       <p>{{Id}}</p>
       <p><img alt="Created:" src="icons/calendar-clock.svg"> {{createDate}}. {{Status}}.</p>
-      <p><img alt="Image:" src="icons/file-outline.svg"> <a href="javascript:viewImages('{{imageTag}}');" title="Jump to Image">{{imageTag}}</a></p>
+      <p><img alt="Image:" src="icons/file-outline.svg"> <a href="#images/{{imageTag}}" title="Jump to Image">{{imageTag}}</a></p>
       {{projectInfo}}
       {{quickCommands}}
     </details>
@@ -420,7 +432,7 @@ async function viewContainers(containerOfInterest) {
     // Docker Compose puts information in labels, but not all containers are started using docker-compose.
     if (container.Labels && container.Labels['com.docker.compose.project']) {
       let projectName = container.Labels['com.docker.compose.project'];
-      htmlChunk = htmlChunk.replace(/{{projectInfo}}/, `<p><img alt="Project:" src="icons/format-list-bulleted-type.svg"> <a href="javascript:viewProjects('${projectName}');" title="Jump to Project">${projectName}</a></p>`);
+      htmlChunk = htmlChunk.replace(/{{projectInfo}}/, `<p><img alt="Project:" src="icons/format-list-bulleted-type.svg"> <a href="#projects/${projectName}" title="Jump to Project">${projectName}</a></p>`);
     }
     else {
       htmlChunk = htmlChunk.replace(/{{projectInfo}}/, '');
@@ -607,7 +619,7 @@ async function viewProjects(projectOfInterest) {
           let projectLabel = container.Labels['com.docker.compose.project'];
           if (typeof projectLabel !== 'undefined' && projectLabel == dockerCompose.project) {
             let containerName = container.Names[0].replace(/^\//, '');  // Remove leading slash for better readability.
-            containerHTML += `<p><a href="#containers" onclick="viewContainers('${containerName}')" title="Jump to Container"><img alt="container" src="icons/cube-outline.svg"> ${containerName}</a></p>`;
+            containerHTML += `<p><a href="#containers/${containerName}" title="Jump to Container"><img alt="container" src="icons/cube-outline.svg"> ${containerName}</a></p>`;
           }
         });
         return containerHTML || '<p>Not deployed.</p>';

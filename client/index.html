@@ -11,7 +11,7 @@
   <script src="script.js"></script>
 </head>
 
-<body>
+<body onhashchange="selectViewFromURL();">
   <div id="alert" onclick="this.style.display='none';" style="cursor: pointer;"><!-- Alerts will appear here. --></div>
 
   <!--
@@ -20,17 +20,17 @@
   -->
   <nav>
     <p><span class="nav-heading">Container Central</span><br>
-      <a href="#home" onclick="viewInfo();"><img alt="home" src="icons/home-outline.svg"><span class="label">Home</span></a>
-      <a href="#containers" onclick="viewContainers();"><img alt="container" src="icons/cube-outline.svg"><span class="label">Containers</span></a>
-      <a href="#images" onclick="viewImages();"><img alt="image" src="icons/file-outline.svg"><span class="label">Images</span></a>
-      <a href="#projects" onclick="viewProjects();"><img alt="project" src="icons/format-list-bulleted-type.svg"><span class="label">Projects</span></a>
-      <a href="#volumes" onclick="viewVolumes();"><img alt="volume" src="icons/database-outline.svg"><span class="label">Volumes</span></a>
-      <a href="#config" onclick="viewConfig();"><img alt="gear" src="icons/cog-outline.svg"><span class="label">Configuration</span></a>
+      <a href="/"><img alt="home" src="icons/home-outline.svg"><span class="label">Home</span></a>
+      <a href="#containers"><img alt="container" src="icons/cube-outline.svg"><span class="label">Containers</span></a>
+      <a href="#images"><img alt="image" src="icons/file-outline.svg"><span class="label">Images</span></a>
+      <a href="#projects"><img alt="project" src="icons/format-list-bulleted-type.svg"><span class="label">Projects</span></a>
+      <a href="#volumes"><img alt="volume" src="icons/database-outline.svg"><span class="label">Volumes</span></a>
+      <a href="#config"><img alt="gear" src="icons/cog-outline.svg"><span class="label">Configuration</span></a>
     </p>
   </nav>
 
   <main>
-    <script>selectViewFromURL();</script> <!-- Only runs on initial page load and any manual refreshes. -->
+    <script>selectViewFromURL();</script>
   </main>
 </body>
 
