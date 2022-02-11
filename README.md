@@ -36,4 +36,4 @@ _Containers view shown in portrait mode on simulated Galaxy S20_
 
 ![image](https://github.com/DavesCodeMusings/container-central/blob/main/docs/screenshots/home.png)
 
-_Stacks view shown on a typical 16:9 landscape mode display panel._
+_Home Screen with Navigation._
