@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * An API to expose parts of the Docker API and also provide an interface
- * to docker-compose.yml files.
+ * An API to expose parts of the Docker API for simple container management.
  */
 import express, { urlencoded } from 'express';
 import { exec } from 'child_process';
@@ -21,20 +20,7 @@ catch (ex) {
 }
 
 /* Add defaults for any values not set */
-config.gitNoVerifySSL = config.gitNoVerifySSL || false;
-config.composeBinary = config.composeBinary || '/usr/local/bin/docker-compose';
 config.listenPort = config.listenPort || '8088';
-
-/* Many features rely on the docker-compose and the compose project files directory being present. */
-if (!existsSync(config.composeBinary)) {
-  console.warn(`Unable to find ${config.composeBinary}. Functionality will be limited.`);
-}
-
-let composeProjectsPath = new URL(join('data', 'compose', '/'), import.meta.url);  // There has to be a trailing slash!
-if (!existsSync(composeProjectsPath)) {
-  console.info(`Creating missing 'compose' directory.`);
-  mkdirSync(composeProjectsPath);
-}
 
 /* Parse quick commands file and report errors at startup to avoid surprises later. */
 const quickCommandsFile = new URL('data/quick_commands.json', import.meta.url);
@@ -134,17 +120,8 @@ app.get('/info', async (req, res) => {
 });
 
 app.get('/projects', (req, res) => {
-  let files = readdirSync(composeProjectsPath).filter(file => file.endsWith('.yml'));
   let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
   let projectInfo = [];
-  files.forEach(file => {
-    let info = {
-      project: file.replace(/.yml/, ''),
-      filename: file,
-      yaml: readFileSync(new URL(file, composeProjectsPath), { encoding: 'utf8' }).split('\n')
-    }
-    projectInfo.push(info);
-  });
   console.info(`200 ${ip} ${req.method} ${req.path}`);
   res.setHeader("Content-Type", "application/json");
   res.send(JSON.stringify(projectInfo, null, 2));
@@ -162,39 +139,6 @@ app.get('/config', (req, res) => {
   let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
   console.info(`200 ${ip} ${req.method} ${req.path}`);
   res.json(config);
-});
-
-/* Uploading new config values. */
-app.post('/config', (req, res) => {
-  let proposedConfig = req.body;
-  let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-
-  if (proposedConfig.gitUrl === 'undefined') {  // use empty string, not undefined
-    config.gitUrl == '';
-  }
-  else {
-    config.gitUrl = proposedConfig.gitUrl;
-  }
-
-  if (proposedConfig.gitNoVerifySSL == 'true') {  // use boolean, not string
-    config.gitNoVerifySSL = true;
-  }
-  else {
-    config.gitNoVerifySSL = false;
-  }
-
-  if (proposedConfig.composeBinary && existsSync(proposedConfig.composeBinary)) {
-    config.composeBinary = proposedConfig.composeBinary
-  }
-
-  if (proposedConfig.listenPort) {  // use integer, not string
-    config.listenPort = parseInt(proposedConfig.listenPort);
-  }
-
-  writeFileSync(configFile, JSON.stringify(config, null, 2));
-
-  console.info(`302 ${ip} ${req.method} ${req.path}`);
-  res.redirect('/');
 });
 
 // A list of available quick commands to choose from.
@@ -255,51 +199,6 @@ app.post('/containers/:containerId/:action', async (req, res) => {
   }
 });
 
-app.post('/projects/git', (req, res) => {
-  let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-  if (!config.gitUrl) {
-    console.error(`404 ${ip} ${req.method} ${req.path}`);
-    console.debug(`gitUrl is not configured in ${configFile}`);
-    res.status(404);
-    res.send('Git URL not configured.');
-  }
-  else {
-    let execOptions = { cwd: composeProjectsPath };
-    if (config.gitNoVerifySSL) {
-      execOptions['env'] = { 'GIT_SSL_NO_VERIFY': true };
-    }
-    if (!existsSync(new URL('.git', composeProjectsPath))) {  // If no local repo, try to recover by doing git clone.
-      console.error(`No local copy of git repository. Trying git clone ${config.gitUrl}`);
-      exec(`git clone ${config.gitUrl} . && git config pull.ff only`, execOptions, (err, stdout, stderr) => {
-        if (err) {
-          console.error(`500 ${ip} ${req.method} ${req.path}`);
-          console.debug(stderr);
-          res.status(500);
-          res.send('git clone failed.');
-        }
-        else {
-          console.info(`200 ${ip} ${req.method} ${req.path}`);
-          res.send('git clone successful.');
-        }
-      });
-    }
-    else {
-      exec(`git pull`, execOptions, (err, stdout, stderr) => {
-        if (err) {
-          console.error(`500 ${ip} ${req.method} ${req.path}`);
-          console.debug(stderr);
-          res.status(500);
-          res.json('git pull failed.');
-        }
-        else {
-          console.info(`200 ${ip} ${req.method} ${req.path}`);
-          res.send('git pull successful.');
-        }
-      });
-    }
-  }
-});
-
 app.post('/:target/prune', async (req, res) => {
   let target = req.params['target'];
   if (target == 'containers' || target == 'images' || target == 'volumes') {
@@ -319,60 +218,6 @@ app.post('/images/pull/:imageTag', async (req, res) => {
   let reply = await callDockerAPI(`/images/create?fromImage=${image}&platform=arm&repo=hub.docker.com&tag=${tag}`, 'POST');
   console.log(reply);
   res.send(reply);
-});
-
-app.post('/projects/:projectName/:action', (req, res) => {
-  let projectName = req.params['projectName'];
-  let action = req.params['action'];
-
-  if (action != 'down' && action != 'up' && action != 'restart') {
-    res.status(406);
-    res.send(`"Unsupported action: ${action}."`)
-  }
-  else {
-    if (!existsSync(join(composeProjectsPath.pathname, projectName + '.yml'))) {
-      console.error(`File not found: ${join(composeProjectsPath.pathname, projectName + '.yml')}`);
-      res.status(404);
-      res.send(`"No such file: ${projectName}.yml"`);
-    }
-    else {
-      if (!existsSync(config.composeBinary)) {
-        console.error(`${err.code} when looking for ${config.composeBinary}`);
-        res.status(404);
-        res.send("docker-compose not found");
-      }
-      else {
-        if (action == 'up') {
-          exec(`${config.composeBinary} -f ${projectName}.yml -p ${projectName} up -d`, { cwd: composeProjectsPath }, (err, stdout, stderr) => {
-            if (err) {
-              console.error(`Command failed: ${config.composeBinary} -f ${projectName}.yml -p ${projectName} up -d`);
-              console.debug(stderr);
-              res.status(404);
-              res.send(`"Deployment failed."`);
-            }
-            else {
-              res.send(`"${stdout}"`);
-            }
-          });
-        }
-        else {
-          exec(`${config.composeBinary} -f ${projectName}.yml -p ${projectName} ${action}`, { cwd: composeProjectsPath }, (err, stdout, stderr) => {
-            if (err) {
-              console.error(`Command failed: ${config.composeBinary} -f ${projectName}.yml -p ${projectName} ${action}`);
-              console.debug(stderr);
-              res.status(404);
-              res.send(`"Action failed: ${action}"`);
-            }
-            else {
-              console.debug(`Command succeeded: ${config.composeBinary} -f ${projectName}.yml -p ${projectName} ${action}`);
-              console.debug(stderr);
-              res.send(`"Successful ${action}"`);
-            }
-          });
-        }
-      }
-    }
-  }
 });
 
 var server = app.listen(config.listenPort, '0.0.0.0', () => {
