@@ -1,7 +1,7 @@
 # Container Central Quick Start
 
 ## Running
-On Raspberry Pi, the easiest way to run Container Central is to use the Docker container. Start the container using a Docker volume for persistent data, like this:
+The easiest way to run Container Central is to use the Docker container. Start the container using a Docker volume for persistent data, like this:
 
 ```
 docker run -d \
@@ -10,17 +10,6 @@ docker run -d \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -v cc_data:/app/data \
   davescodemusings/container-central:latest
-```
-
-For WSL2 and other x86-based systems, use the x86 tag, like this:
-
-```
-docker run -d \
-  --name container-central \
-  -p 8088:8088 \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  -v cc_data:/app/data \
-  davescodemusings/container-central:x86
 ```
 
 ## The Home Screen
@@ -56,16 +45,8 @@ If you expand the details of the container you'll be presented with more informa
 
 If any images are no longer being used, a trash can icon will appear at the bottom of the list. Click or tap to delete the unused images.
 
-## Stacks
-Select the stacks menu choice and you will see a list of Docker Compose projects.
-
-![stacks view](screenshots/stacks.png)
-
-What you see here are any Docker Compose YAML files avaialble to deploy. Container Central stores these in the _data/compose_ directory.
-
-Clicking the up arrow will deploy the stack, just like typing the command `docker-compose -f nginx.yml -p nginx up -d` The down arrow is the same as `docker-compose down` and the U-turn arrow will let you do a restart.
-
-You can create your own Docker Compose YAML files and save them in the _data/compose_ directory, or you can configure a git repository and pull them from there. Which ever option you choose, name the YAML files with the stack name. For example, _nginx-test.yml_ in _data/compose_ appears here in the stacks view as _nginx-test_.
+## Projects
+Select the projects menu choice and you will see a list of Docker Compose projects.
 
 ## Volumes
 Select volumes to view Docker Volume information as if you had typed `docker volume ls` from the command-line. It's not very exciting, so there's no screenshot.
