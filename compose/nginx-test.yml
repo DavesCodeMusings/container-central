@@ -1,8 +1,0 @@
-services:
-    nginx:
-        image: nginx
-        container_name: nginx-test
-        hostname: nginx
-        restart: unless-stopped
-        ports:
-        - 8880:80
