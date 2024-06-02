@@ -11,8 +11,11 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
-            - uses: actions/checkout@v3
-            - uses: docker/setup-qemu-action@v3
+            - name: Checkout
+              uses: actions/checkout@v3
+
+            - name: Setup qemu for multi-arch build
+              uses: docker/setup-qemu-action@v3
 
             - name: Setup buildx
               uses: docker/setup-buildx-action@v2
@@ -34,7 +37,7 @@ jobs:
               uses: docker/build-push-action@v3
               with:
                   context: .
-                  platforms: linux/amd64,linux/arm64
+                  platforms: linux/amd64,linux/arm64,linux/arm/v7
                   push: true
                   tags: |
                       davescodemusings/container-central:latest
@@ -43,3 +46,5 @@ jobs:
                       ghcr.io/davescodemusings/container-central:x86
                       davescodemusings/container-central:arm64
                       ghcr.io/davescodemusings/container-central:arm64
+                      davescodemusings/container-central:armv7
+                      ghcr.io/davescodemusings/container-central:armv7
