@@ -12,7 +12,7 @@ jobs:
 
         steps:
             - uses: actions/checkout@v3
-            # - uses: docker/setup-qemu-action@v3
+            - uses: docker/setup-qemu-action@v3
 
             - name: Setup buildx
               uses: docker/setup-buildx-action@v2
@@ -40,12 +40,12 @@ jobs:
                       davescodemusings/container-central:x86
                       ghcr.io/davescodemusings/container-central:x86
 
-            # - name: Build and push ARM
-            #   uses: docker/build-push-action@v3
-            #   with:
-            #       context: .
-            #       platforms: linux/arm64
-            #       push: true
-            #       tags: |
-            #           davescodemusings/container-central:latest
-            #           ghcr.io/davescodemusings/container-central:latest
+            - name: Build and push ARM
+              uses: docker/build-push-action@v3
+              with:
+                  context: .
+                  platforms: linux/arm64
+                  push: true
+                  tags: |
+                      davescodemusings/container-central:latest
+                      ghcr.io/davescodemusings/container-central:latest
