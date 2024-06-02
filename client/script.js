@@ -447,9 +447,11 @@ async function viewImages(tagOfInterest) {
   let template = `
     <details id="{{tag}}">
       <summary><img alt="freshness indicator" src={{ageIcon}}> {{tag}}
+        <!-- Pull functionality removed until Issue #22 is sorted
         <span class="popup-controls grouping">
           <a href="javascript:imageControl('pull', '{{tag}}')" title="Pull Latest Image"><img alt="pull" src="icons/download.svg"></a>
         </span>
+        -->
       </summary>
       <p>{{Id}}</p>
       <p><img alt="Created:" src="icons/calendar-clock.svg"> {{createDate}}</p>
