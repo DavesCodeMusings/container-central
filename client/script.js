@@ -146,60 +146,6 @@ async function imageControl(action, imageTag) {
 }
 
 /**
- * A wrapper for the /projects up, down, restart API calls.
- * @param {string} action, one of: start, stop, restart.
- * @param {string} projectName, the project name (i.e. projectName.yml).
- */
-async function projectControl(action, projectName) {
-  switch (action) {
-    case 'git-pull':
-      showAlert('Pulling compose files from git repository...');
-      break;
-    case 'up':
-      showAlert(`Deploying ${projectName}...`);
-      break;
-    case 'down':
-      showAlert(`Stopping ${projectName}...`);
-      break;
-    case 'restart':
-      showAlert(`Redeploying ${projectName}...`);
-      break;
-    default:
-      showAlert(`${projectName} ${action}`);
-  }
-  if (action == 'git-pull') {
-    let response = await fetch(`/projects/git`, { method: 'POST' });
-    if (response.status == 200) {
-      showAlert('Compose files are up to date.');
-    }
-    else {
-      let msg = await response.text();
-      showAlert(`Git pull error: ${msg}`);
-    }
-    viewProjects();
-  }
-  else {
-    let response = await fetch(`/projects/${projectName}/${action}`, { method: 'POST' });
-    if (response.status == 200) {
-      switch (action) {
-        case 'up':
-          showAlert(`${projectName} deployed.`);
-          break;
-        case 'down':
-          showAlert(`${projectName} is down.`);
-          break;
-        case 'restart':
-          showAlert(`${projectName} redeployed.`);
-          break;
-        default:
-          showAlert(`${projectName} ${action} complete.`);
-      }
-    }
-    viewProjects();
-  }
-}
-
-/**
  * Retrieve data from the /containers API call and format as HTML for viewing.
  */
 async function viewInfo() {
@@ -393,7 +339,7 @@ async function viewContainers(containerOfInterest) {
       return ((typeof container[property] === 'undefined') ? match : container[property]);
     });
 
-    // An icon stowing stopped, started, or paused is not returned from the API, but it can be derived.
+    // An icon showing stopped, started, or paused is not returned from the API, but it can be derived.
     let stateIcon = '';
     switch (container.State) {
       case 'running':
@@ -634,7 +580,6 @@ async function viewProjects(projectOfInterest) {
     });
   }
 
-  html += `<p><img alt="git-pull" class="control-aside" onclick="projectControl('git-pull');" src="icons/source-branch.svg"><p>`;
   document.getElementsByTagName('main')[0].innerHTML = html;
 
   if (projectOfInterest) {
@@ -673,62 +618,6 @@ async function viewVolumes() {
         });
       });
       document.getElementsByTagName('main')[0].innerHTML = html;
-    }
-  }
-  catch {
-    showAlert(`API request failed.`);
-  }
-}
-
-async function viewConfig() {
-  let html = `<h2>Configuration<img alt="refresh" class="control-aside" src="icons/refresh.svg" onclick="viewConfig();"></h2>`;
-  let template = `
-    <form action="/config" method="post">
-      <fieldset>
-        <legend>Git Integration</legend>
-        <label for="gitUrl">Repository URL:</label>
-        <input id="gitUrl" name="gitUrl" type="url" placeholder="https://git.mypi.home/pi/compose.git" value="{{gitUrl}}">
-        <br>
-        <input id="git-no-verify-ssl" name="gitNoVerifySSL" type="checkbox" value="true"> <label for="git-no-verify-ssl">Skip SSL Verification:</label>
-      </fieldset>
-
-      <fieldset>
-        <legend>Project Deployment</legend>
-        <label for="compose-binary">Path to docker-compose:</label>
-        <input id="compose-binary" name="composeBinary" type="text" placeholder="/usr/local/bin/docker-compose" value="{{composeBinary}}">
-      </fieldset>
-
-      <fieldset>
-        <legend>Server</legend>
-        <label for="listenPort">Listen port:</label>
-        <input id="listenPort" name="listenPort" type="number" placeholder="8088" value="{{listenPort}}">
-        <br>
-        <i>Changes here require an application restart to take effect.</i>
-      </fieldset>
-      <br>
-      <input type="submit" value="Save">
-    </form>
-  `;
-
-  console.info(`Fetching configuration from ${window.location.origin}/config`);
-  try {
-    let configResponse = await fetch(window.location.origin + '/config');
-    if (configResponse.status != 200) {
-      console.error(`${configResponse.status} received while fetching ${window.location.origin}/config`);
-    }
-    else {
-      let configData = await configResponse.json();
-
-      html += template.replace(/{{\w+}}/g, (match) => {
-        let property = match.replace(/^{{/, '').replace(/}}$/, '');
-        let value = configData[property] || '';  // undefined becomes an empty string
-        return value;
-      });
-
-      document.getElementsByTagName('main')[0].innerHTML = html;
-      if (configData.gitNoVerifySSL) {
-        document.getElementById('git-no-verify-ssl').checked = true;
-      }
     }
   }
   catch {
