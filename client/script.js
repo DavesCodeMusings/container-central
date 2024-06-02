@@ -200,7 +200,7 @@ async function projectControl(action, projectName) {
 }
 
 /**
- * Retrieve data from the /containers API call and format as HTML for viewing. 
+ * Retrieve data from the /containers API call and format as HTML for viewing.
  */
 async function viewInfo() {
   let html = `
@@ -307,7 +307,7 @@ async function viewInfo() {
 }
 
 /**
- * Retrieve data from the /containers API call and format as HTML for viewing. 
+ * Retrieve data from the /containers API call and format as HTML for viewing.
  */
 async function viewContainers(containerOfInterest) {
   let html = `<h2>Containers <img alt="refresh" class="control-aside" src="icons/refresh.svg" onclick="viewContainers();"></h2>`;
@@ -393,7 +393,7 @@ async function viewContainers(containerOfInterest) {
       return ((typeof container[property] === 'undefined') ? match : container[property]);
     });
 
-    // An icon stowing stopped, started, or paused is not returned from the API, but it can be derived. 
+    // An icon stowing stopped, started, or paused is not returned from the API, but it can be derived.
     let stateIcon = '';
     switch (container.State) {
       case 'running':
@@ -485,8 +485,14 @@ async function viewImages(tagOfInterest) {
   `;
 
   console.info(`Fetching image info from ${window.location.origin}/images`);
+  let imagesResponse = null;
   try {
-    let imagesResponse = await fetch(window.location.origin + '/images');
+    imagesResponse = await fetch(window.location.origin + '/images');
+  }
+  catch {
+    showAlert(`API request failed.`);
+  }
+  if (imagesResponse) {
     if (imagesResponse.status != 200) {
       console.error(`${imagesResponse.status} received while fetching ${window.location.origin}/images`);
       html += `<p>API error ${imagesResponse.status}</p>`;
@@ -507,8 +513,8 @@ async function viewImages(tagOfInterest) {
         }
 
         // When an image is updated, but a container still runs an old image, it's possible to have a null tag.
-        // In this case, use the image id as the unique identifier. 
-        if (image.RepoTags) {
+        // In this case, use the image id as the unique identifier.
+        if (image.RepoTags && image.RepoTags[0]) {
           image.tag = image.RepoTags[0].replace(/</g, '&lt;').replace(/>/g, '&gt');
         }
         else {
@@ -532,9 +538,6 @@ async function viewImages(tagOfInterest) {
       document.getElementsByTagName('main')[0].innerHTML = html;
     }
   }
-  catch {
-    showAlert(`API request failed.`);
-  }
 
   if (tagOfInterest) {
     document.getElementById(tagOfInterest).open = true;
@@ -542,7 +545,7 @@ async function viewImages(tagOfInterest) {
 }
 
 /**
- * Retrieve data from the /projects API call and format as HTML for viewing. 
+ * Retrieve data from the /projects API call and format as HTML for viewing.
  */
 async function viewProjects(projectOfInterest) {
   let html = `<h2>Projects <img alt="refresh" class="control-aside" src="icons/refresh.svg" onclick="viewProjects();"></h2>`;
@@ -640,7 +643,7 @@ async function viewProjects(projectOfInterest) {
 }
 
 /**
- * Retrieve data from the /volumes API call and format as HTML for viewing. 
+ * Retrieve data from the /volumes API call and format as HTML for viewing.
  */
 async function viewVolumes() {
   let html = `<h2>Volumes<img alt="refresh" class="control-aside" src="icons/refresh.svg" onclick="viewVolumes();"></h2>`;
