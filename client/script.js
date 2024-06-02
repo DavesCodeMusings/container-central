@@ -181,10 +181,18 @@ async function viewInfo() {
 
   // Most of the information for template placeholders comes from the /info API call.
   console.info(`Fetching info from ${window.location.origin}/info`);
+  let infoResponse = null;
   try {
-    let infoResponse = await fetch(window.location.origin + '/info');
+    infoResponse = await fetch(window.location.origin + '/info');
+  }
+  catch (ex) {
+    console.error(`${ex}`);
+    showAlert(`API request failed.`);
+  }
+  if (infoResponse) {
     if (infoResponse.status != 200) {
       console.error(`${infoResponse.status} received while fetching ${window.location.origin}/info`);
+      showAlert(`API request failed.`);
     }
     else {
       let info = await infoResponse.json();
@@ -197,58 +205,69 @@ async function viewInfo() {
       html = html.replace(/{{ram}}/, (info.MemTotal / 1024 / 1024 / 1024).toFixed(2));
     }
   }
-  catch {
-    showAlert(`API request failed.`);
-  }
 
   // The count of images from /info includes dangling images, so fetch from /images instead.
   console.info(`Fetching images from ${window.location.origin}/images`);
+  let imagesResponse = null;
   try {
-    let imagesResponse = await fetch(window.location.origin + '/images');
+    imagesResponse = await fetch(window.location.origin + '/images');
+  }
+  catch (ex) {
+    console.error(`${ex}`);
+    showAlert(`API request failed.`);
+  }
+  if (imagesResponse) {
     if (imagesResponse.status != 200) {
       console.error(`${imagesResponse.status} received while fetching ${window.location.origin}/images`);
+      showAlert(`API request failed.`);
     }
     else {
       let imagesInfo = await imagesResponse.json();
       html = html.replace(/{{numImages}}/, imagesInfo.length);
     }
   }
-  catch {
-    showAlert(`API request failed.`);
-  }
 
   // Docker Compose projects are not part of the /info API call.
   console.info(`Fetching projects from ${window.location.origin}/projects`);
+  let projectsResponse = null;
   try {
-    let projectsResponse = await fetch(window.location.origin + '/projects');
+    projectsResponse = await fetch(window.location.origin + '/projects');
+  }
+  catch (ex) {
+    console.error(`${ex}`);
+    showAlert(`API request failed.`);
+  }
+  if (projectsResponse) {
     if (projectsResponse.status != 200) {
       console.error(`${projectsResponse.status} received while fetching ${window.location.origin}/projects`);
+      showAlert(`API request failed.`);
     }
     else {
       let projectsInfo = await projectsResponse.json();
       html = html.replace(/{{numProjects}}/, projectsInfo.length);
     }
   }
-  catch {
-    showAlert(`API request failed.`);
-  }
 
   // A count of volumes is not included in /info and must be gathered separately.
   console.info(`Fetching volumes from ${window.location.origin}/volumes`);
+  let volumesResponse = null;
   try {
-    let volumesResponse = await fetch(window.location.origin + '/volumes');
+    volumesResponse = await fetch(window.location.origin + '/volumes');
+  }
+  catch (ex) {
+    console.error(`${ex}`);
+    showAlert(`API request failed.`);
+  }
+  if (volumesResponse) {
     if (volumesResponse.status != 200) {
       console.error(`${volumesResponse.status} received while fetching ${window.location.origin}/volumes`);
+      showAlert(`API request failed.`);
     }
     else {
       let volumesInfo = await volumesResponse.json();
       html = html.replace(/{{numVolumes}}/, volumesInfo.Volumes.length);
     }
   }
-  catch {
-    showAlert(`API request failed.`);
-  }
-
   document.getElementsByTagName('main')[0].innerHTML = html;
 }
 
@@ -278,8 +297,14 @@ async function viewContainers(containerOfInterest) {
   // But it's not critical, so failure to retrieve is not fatal.
   console.info(`Fetching image info from ${window.location.origin}/images`);
   let imageData = [];
+  let imagesResponse = null;
   try {
-    let imagesResponse = await fetch(window.location.origin + '/images');
+    imagesResponse = await fetch(window.location.origin + '/images');
+  }
+  catch (ex) {
+    console.warn(`${ex}`);
+  }
+  if (imagesResponse) {
     if (imagesResponse.status != 200) {
       console.error(`${imagesResponse.status} received while fetching ${window.location.origin}/images`);
     }
@@ -288,16 +313,19 @@ async function viewContainers(containerOfInterest) {
       console.debug(`${imageData.length} image(s) retrieved.`);
     }
   }
-  catch (ex) {
-    console.warn(`API call 'GET /images' failed. ${ex}`);
-  }
 
   // Containers may use quick commands. A GET call to /containers/exec will retrieve these.
   // Also not fatal if the call fails.
   console.info(`Fetching quick commands from ${window.location.origin}/containers/exec`);
   let quickCommands = [];
+  let quickCommandsResponse = null;
   try {
-    let quickCommandsResponse = await fetch(window.location.origin + '/containers/exec');
+    quickCommandsResponse = await fetch(window.location.origin + '/containers/exec');
+  }
+  catch (ex) {
+    console.warn(`${ex}`);
+  }
+  if (quickCommandsResponse) {
     if (quickCommandsResponse.status != 200) {
       console.error(`${quickCommandsResponse.status} received while fetching ${window.location.origin}/containers/exec`);
     }
@@ -306,16 +334,20 @@ async function viewContainers(containerOfInterest) {
       console.debug(`${quickCommands.length} command(s) retrieved.`);
     }
   }
-  catch (ex) {
-    console.warn(`API call 'GET /containers/exec' failed. ${ex}`);
-  }
 
   // And finally... Containers!
   console.info(`Fetching container info from ${window.location.origin}/containers`);
   let containerData = [];
   let anyStopped = 0;
+  let containersResponse = null;
   try {
-    let containersResponse = await fetch(window.location.origin + '/containers');
+    containersResponse = await fetch(window.location.origin + '/containers');
+  }
+  catch (ex) {
+    console.error(`${ex}`);
+    showAlert(`API request failed.`);
+  }
+  if (containersResponse) {
     if (containersResponse.status != 200) {
       showAlert(`API request failed.`);
       console.error(`${containersResponse.status} received while fetching ${window.location.origin}/containers`);
@@ -324,10 +356,6 @@ async function viewContainers(containerOfInterest) {
       containerData = await containersResponse.json();
       console.debug(`${containerData.length} container(s) retrieved.`);
     }
-  }
-  catch (ex) {
-    showAlert(`API request failed.`);
-    console.error(`API call 'GET /containers' failed. ${ex}`);
   }
 
   containerData.forEach(container => {
@@ -435,7 +463,8 @@ async function viewImages(tagOfInterest) {
   try {
     imagesResponse = await fetch(window.location.origin + '/images');
   }
-  catch {
+  catch (ex) {
+    console.error(`${ex}`);
     showAlert(`API request failed.`);
   }
   if (imagesResponse) {
@@ -515,37 +544,45 @@ async function viewProjects(projectOfInterest) {
   // Fetch /containers to use for associating containers with their projects.
   console.info(`Fetching container info from ${window.location.origin}/containers`);
   let containerData = [];
+  let containersResponse = null;
   try {
-    let containersResponse = await fetch(window.location.origin + '/containers');
+    containersResponse = await fetch(window.location.origin + '/containers');
+  }
+  catch (ex) {
+    console.error(`${ex}`);
+    showAlert(`API request failed.`);
+  }
+  if (containersResponse) {
     if (containersResponse.status != 200) {
-      showAlert(`API request failed.`);
       console.error(`${containersResponse.status} received while fetching ${window.location.origin}/containers`);
+      showAlert(`API request failed.`);
     }
     else {
       containerData = await containersResponse.json();
       console.debug(`${containerData.length} container(s) retrieved.`);
     }
   }
-  catch (ex) {
-    showAlert(`API request failed.`);
-    console.error(`API call 'GET /containers' failed. ${ex}`);
-  }
 
   // Fetch /projects to find the YAML file that defines them.
   console.info(`Fetching project info from ${window.location.origin}/projects`);
   let projectData = [];
+  let projectsResponse = null;
   try {
     let projectsResponse = await fetch(window.location.origin + '/projects');
+  }
+  catch (ex) {
+    console.error(`${ex}`);
+    showAlert(`API request failed.`);
+  }
+  if (projectsResponse) {
     if (projectsResponse.status != 200) {
       console.error(`${projectsResponse.status} received while fetching ${window.location.origin}/projects`);
+      showAlert(`API request failed.`);
     }
     else {
       projectData = await projectsResponse.json();
       console.debug(`${projectData.length} project(s) retrieved.`);
     }
-  }
-  catch {
-    showAlert(`API request failed.`);
   }
 
   if (projectData.length == 0) {
@@ -602,8 +639,15 @@ async function viewVolumes() {
   `;
 
   console.info(`Fetching volume info from ${window.location.origin}/volumes`);
+  let volumesResponse = null;
   try {
-    let volumesResponse = await fetch(window.location.origin + '/volumes');
+    volumesResponse = await fetch(window.location.origin + '/volumes');
+  }
+  catch (ex) {
+    console.error(`${ex}`);
+    showAlert(`API request failed.`);
+  }
+  if (volumesResponse) {
     if (volumesResponse.status != 200) {
       console.error(`${volumesResponse.status} received while fetching ${window.location.origin}/volumes`);
     }
@@ -619,8 +663,5 @@ async function viewVolumes() {
       });
       document.getElementsByTagName('main')[0].innerHTML = html;
     }
-  }
-  catch {
-    showAlert(`API request failed.`);
   }
 }
