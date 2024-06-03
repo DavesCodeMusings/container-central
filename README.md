@@ -1,6 +1,8 @@
 # Container Central
 A totally minimalist, not quite ready for prime time, but still pretty good solution for managing Docker containers on 64-bit Raspberry Pi and x86-64.
 
+[![Build](https://github.com/DavesCodeMusings/container-central/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/DavesCodeMusings/container-central/actions/workflows/docker-image.yml)
+
 ## What is it?
 Container Central is a web-based management tool for Docker containers that focuses on the needs of the home LAN user. My target is a Raspberry Pi or NUC running Docker Community Edition and a handful of containers. That's it.
 
